@@ -1,0 +1,13 @@
+(1) To generate input impressions:
+
+% mkdir inputs
+% make gen_inputs
+% ./gen_inputs <num_impressions>
+
+(2) To build and run software:
+
+% make
+% ./adp -n <num_cpus> <num_impressions>
+
+Note that input files need to be larger (or the same size) as the problem size called. It is easiest to generate very large inputs once (~10,000,000) and use this for all execution.
+

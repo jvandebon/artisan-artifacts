@@ -1,0 +1,12 @@
+
+https://github.com/maxeler/NBody/tree/master/APP
+
+make
+make run
+
+32768 saturates 1 CPU thread ~6s
+65536 saturates 2 CPU threads ~12s
+65536 saturates 4 CPU threads ~6s
+131072 saturates 8 CPU threads ~12s
+
+131072 w/ 1 CPU thread ~92s

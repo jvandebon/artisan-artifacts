@@ -1,0 +1,4 @@
+https://github.com/cornell-zhang/rosetta/tree/master/spam-filter
+
+make
+./spam_filter -p <path_to_dataset>

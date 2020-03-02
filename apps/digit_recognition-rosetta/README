@@ -1,0 +1,4 @@
+https://github.com/cornell-zhang/rosetta/tree/master/digit-recognition
+
+make
+./digit_recognition

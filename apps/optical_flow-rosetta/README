@@ -1,0 +1,6 @@
+https://github.com/cornell-zhang/rosetta/tree/master/optical-flow
+
+make
+./optical_flow -p <path_to_dataset> -o <path_to_output_file>
+
+Note that <path_to_output_file> must end with the extension .flo. Example: output.flo, out.flo. 

@@ -1,0 +1,14 @@
+https://github.com/maxeler/Classification
+
+make
+make run    --> runs w/ 1048576 particles (change problem size in Makefile)
+
+
+131072 almost saturates 1 CPU thread ~5s (99.X%)
+262144 saturates 1 CPU thread ~10s
+262144 saturates 2 CPU threads ~5s
+524288 almost saturates 4 CPU threads ~5s (399.X%)
+1048576 saturates 4 CPU threads ~10s
+1048576 saturates 8 CPU threads ~5s
+
+1048576 w/ 1 CPU thread ~40s
