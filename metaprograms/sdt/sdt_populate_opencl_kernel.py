@@ -1,7 +1,6 @@
 #!/usr/bin/env artisan
 from artisan.core import *
 from artisan.rose import *
-log.level = 2
 
 def format_function_args(args):
     formatted_args = []

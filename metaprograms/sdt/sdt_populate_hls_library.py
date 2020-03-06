@@ -1,8 +1,6 @@
 #!/usr/bin/env artisan
 from artisan.core import *
 from artisan.rose import *
-log.level = 2
-
 
 def determine_args(params):
     args = []
@@ -49,14 +47,13 @@ def get_called_funcs(project, func, funcs_to_copy_over):
 def populate_hls_library(project, path_to_file, args):
     # get hotspot function in input program
      
-    hotspot_func = project.query("g:Global => f:FnDef", where="f.name == 'hotspot'")[0].f
+    hotspot_func = project.query("g:Global => f:FnDef{hotspot}")[0].f
     
     # determine args and types 
     # TODO: now, all  pointer types are 'global'
     func_args = format_args(args)
     
     # function body string
-    # TODO: be careful with  replace std::, check function 
     func_body = hotspot_func.body().unparse().replace('std::', '')
     
     # recursively find all functions called in hotspot
@@ -68,9 +65,7 @@ def populate_hls_library(project, path_to_file, args):
         args = format_args(determine_args(func.decl().params()))
         func_decl = func.decl().return_type().unparse().strip() + " " + func.name + "(" + args + ")"
         function_prototypes += func_decl + ";\n"
-         # TODO: be careful with  replace std::, check function 
         functions += func_decl + "\n" + func.body().unparse().replace('std::', '')
-
 
     # write to template library file 
     with open(path_to_file, 'r') as f:

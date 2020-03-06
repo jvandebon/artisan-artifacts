@@ -2,33 +2,22 @@
 from artisan.core import *
 from artisan.rose import *
 
-import subprocess 
-import os
+import os, subprocess 
 
 from sdt_populate_hls_library import populate_hls_library
 from sdt_populate_opencl_kernel import populate_opencl_kernel
 from sdt_populate_opencl_host import populate_opencl_host
-log.level = 2
-
-
-# def __main__():
-
-# inputs: template path, c++ source
-template_path = "/workspace/metaprograms/templates/"
-source_path = "./optimisation_project/spam_filter.cpp"
 
 def create_swi_project(ast, template_path, source_path):
-    # ast = model(args=cli(), ws=Workspace('project'))
+
     project = ast.project
-    
     # make copy of template project directory
     if not os.path.exists("./swi_project"):
         print("copying over template files ... ")
         subprocess.call(['cp', '-r', template_path+'swi_project', '.'])
 
     # figure out all hotspot function arguments 
-
-    hotspot_func = project.query("g:Global => f:FnDef", where="f.name == 'hotspot'")[0].f 
+    hotspot_func = project.query("g:Global => f:FnDef{hotspot}")[0].f 
     params = hotspot_func.decl().params()
 
     # determine args, types, sizes if static 
@@ -38,11 +27,19 @@ def create_swi_project(ast, template_path, source_path):
         arg['name'] = p.name
         arg['type'] = p.type().unparse().strip()
         arg['string'] = ""
-        if "[" in arg['type'].split()[-1] and "]" in arg['type'].split()[-1]: 
-        #    arg['string'] = ' '.join(arg['type'].split()[:-1]) + " " + arg['name'] + arg['type'].split()[-1]
-            arg['string'] = ' '.join(arg['type'].split()[:-1]) + " * " + arg['name'] 
-            arg['size'] = arg['type'].split()[-1][1:-1] + "*sizeof(" + ' '.join(arg['type'].split()[:-1]) + ")"
-            arg['type'] = ' '.join(arg['type'].split()[:-1]) + " * "
+        # TODO: can't handle 2d array size 
+        if "[" in arg['type'] and "]" in arg['type']: 
+            print(arg['type'], arg['name'])
+            print(arg['type'].split('['))
+            arg['string'] = arg['type'].split('[')[0] + " * " + arg['name'] 
+            if len(arg['type'].split('[')) > 2:
+                size = 1
+                for i in range(1, len(arg['type'].split('['))):
+                    size *= int(arg['type'].split('[')[i][:-1])
+                arg['size'] = str(size) + "*sizeof(" + arg['type'].split('[')[0] + ")"
+            else:
+                arg['size'] = arg['type'].split('[')[-1][:-1] + "*sizeof(" + arg['type'].split('[')[0] + ")"
+            arg['type'] = arg['type'].split('[')[0] + " * "
         else:
             arg['size'] = ""
             arg['string'] = arg['type'] + " " + arg['name']

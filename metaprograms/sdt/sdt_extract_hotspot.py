@@ -3,12 +3,10 @@ from artisan.core import *
 from artisan.rose import *
 
 import sys
-log.level = 2
 
 # inputs: ast, loop to be extracted, function 
 def extract_hotspot(ast, hotspot_loop_tag, hotspot_loop_func):
 
-    # ast = model(args=cli(), ws=Workspace('project'))
     project = ast.project
 
     # find loop based on input 
@@ -39,7 +37,7 @@ def extract_hotspot(ast, hotspot_loop_tag, hotspot_loop_func):
                     type_str = row.e.type().unparse()
                     # TODO: handle fixed length lists better
                     if('[' in type_str.split()[-1] and ']' in type_str.split()[-1]):
-                        arguments.append(' '.join(type_str.split()[:-1]).strip() + " "+ a + type_str.split()[-1])
+                        arguments.append(type_str.split('[')[0].strip() + " " + a + '[' + '['.join(type_str.split('[')[1:]).strip())
                     else:
                         arguments.append(type_str.strip() + " " + a)
 
@@ -52,7 +50,7 @@ def extract_hotspot(ast, hotspot_loop_tag, hotspot_loop_func):
     loop.instrument(pos='replace', code="hotspot(" + ', '.join(other_vars)+ ");\n")
 
     ast.commit()
-    ast.export_to("extracted_hotspot")
+    # ast.export_to("extracted_hotspot")
 
 
 # hotspot_loop_tag = 'rendering_sw_for_a' #'SgdLR_sw_for_a' #'main_for_b' 'compute_for_a' 'run_cpu_for_a'

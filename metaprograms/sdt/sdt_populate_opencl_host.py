@@ -7,8 +7,6 @@ import os
 
 import opencl_host_strings
 
-log.level = 2
-
 def populate_opencl_host(ast, path_to_source, path_to_host, kernel_args):
 
     project = ast.project
@@ -43,7 +41,7 @@ def populate_opencl_host(ast, path_to_source, path_to_host, kernel_args):
             row.c.stmt().instrument(pos='after', code='#endif')
     
     # for delete, need statements
-    # TODO: better way  to find delete, could be not a reserved word 
+    # TODO: better way  to find delete
     exprstmts = project.query("g:Global => s:ExprStmt")
     for row in exprstmts:
         if row.s.in_code() and 'delete' in row.s.unparse(): 
@@ -140,7 +138,6 @@ def populate_opencl_host(ast, path_to_source, path_to_host, kernel_args):
     instrument_block(main_func.body(), "#ifdef  HW\ncleanup();\n#endif", exit=True)
     
     ast.commit()
-    # ast.export_to(path_to_host)
     for f in os.listdir(path_to_source):
         if f.endswith(".cpp"):
             subprocess.call(['cp', path_to_source + "/" + f, path_to_host])
