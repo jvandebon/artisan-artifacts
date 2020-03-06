@@ -2,11 +2,7 @@
 from artisan.core import *
 from artisan.rose import *
 
-import subprocess 
-import os
-import json
-
-log.level = 2
+import subprocess, os, json
 
 # threshold = 50.0
 # ast = model(args=cli(), ws=Workspace('hotspot_check'))
@@ -29,10 +25,10 @@ def identify_hotspots(ast, threshold):
         # TODO: check if outermost loop 
         if loop.parent().parent().is_entity('ForLoop') or loop.parent().is_entity('ForLoop'):
             continue
-        loop.body().instrument(pos='begin', code='Artisan::Timer __timer__("%s", Artisan::op_add);' % loop.tag()) #str(loop_labels[loop.uid]))
+        loop.body().instrument(pos='begin', code='Artisan::Timer __timer__("%s", Artisan::op_add);' % loop.tag()) 
 
     # Instrument main function with a timer and report 
-    wrap_fn(project, 'main', 'main_', after='Artisan::report("loop_times.json");') # before='{\nArtisan::Timer __timer__("main", Artisan::op_add);', after='}\nArtisan::report("loop_times.json");')             
+    wrap_fn(project, 'main', 'main_', after='Artisan::report("loop_times.json");') 
     ast.commit()
     project = ast.project
     main_func = project.query("f:FnDef{main_}")[0].f
@@ -63,5 +59,6 @@ def identify_hotspots(ast, threshold):
         json.dump(hotspots, json_file)
     
     return hotspots
-    # print(hotspots, "\n")
 
+ast = model(args=cli(), ws=Workspace('hotspot_check'))
+identify_hotspots(ast, 50.0)
