@@ -1,4 +1,7 @@
 https://github.com/cornell-zhang/rosetta/tree/master/spam-filter
 
 make
-./spam_filter -p <path_to_dataset>
+make run
+OR
+./main -p <path_to_inputs>
+e.g. ./main -p ../inputs/spam_filter
