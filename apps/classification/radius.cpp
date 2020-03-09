@@ -25,6 +25,8 @@ int main(int argc, char **argv) {
 
 	int points = atoi(argv[1]);
 	srand(100);
+
+	
 	float *classes = (float *)malloc(DIM*CLASSES*sizeof(float));
 	float *data = (float *)malloc(points*DIM*sizeof(float));
 	float *radii2 = (float *)malloc(CLASSES*sizeof(float));
@@ -35,7 +37,7 @@ int main(int argc, char **argv) {
 	}
 
 	for(int i = 0; i < DIM*points; i++){
-			data[i] = (float) rand() / 100000000;
+		data[i] = (float) rand() / 100000000;
 	}
 
 	for(int i = 0; i < CLASSES; i++) {
@@ -47,6 +49,8 @@ int main(int argc, char **argv) {
 		out[i] = 0;
 	}
 	for(int i = 0; i < points; i++) {
+		#pragma artisan-hls vars { "classes": "R", "radii2": "R", "data": "R", "out": "W"}
+		#pragma artisan-hls parallel { "is_parallel" : "True" }
 		radiusCPU(classes, radii2, &data[DIM*i], &out[CLASSES*i]);
 	}
 	int total_in_class = 0;

@@ -84,6 +84,7 @@ if not os.path.exists("./swi_project"):
     create_swi_project(ast, "/workspace/metaprograms/templates/", "swi_ws/default")
     subprocess.call(['rm', '-rf', 'swi_ws'])
 
+
 if os.path.exists(os.getcwd() + '/swi_project/cpp_kernel/cpp_kernel.cpp'):
     print("PATH EXISTS")
 

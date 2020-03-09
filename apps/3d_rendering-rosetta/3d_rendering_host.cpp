@@ -25,7 +25,7 @@ const int NUM_FB = MAX_X * MAX_Y / 4;
 // dataset information 
 const int NUM_3D_TRI = 3192;
 
-struct Triangle_3D
+typedef struct 
 {
   unsigned char   x0;
   unsigned char   y0;
@@ -36,9 +36,9 @@ struct Triangle_3D
   unsigned char   x2;
   unsigned char   y2;
   unsigned char   z2;
-};
+} Triangle_3D;
 
-struct Triangle_2D
+typedef struct 
 {
   unsigned char   x0;
   unsigned char   y0;
@@ -47,22 +47,22 @@ struct Triangle_2D
   unsigned char   x2;
   unsigned char   y2;
   unsigned char   z;
-};
+} Triangle_2D;
 
-struct CandidatePixel
+typedef struct 
 {
   unsigned char   x;
   unsigned char   y;
   unsigned char   z;
   unsigned char   color;
-};
+} CandidatePixel;
 
-struct Pixel
+typedef struct 
 {
   unsigned char   x;
   unsigned char   y;
   unsigned char   color;
-};
+} Pixel;
 
 // dataflow switch
 #define ENABLE_DATAFLOW
@@ -72,7 +72,7 @@ struct Pixel
 
 void print_usage(char* filename);
 void check_results(unsigned char output[MAX_X][MAX_Y]);
-void rendering_sw(struct Triangle_3D triangle_3ds[NUM_3D_TRI], unsigned char output[MAX_X][MAX_Y]);
+void rendering_sw(Triangle_3D triangle_3ds[NUM_3D_TRI], unsigned char output[MAX_X][MAX_Y]);
 
 int main(int argc, char ** argv) 
 {
@@ -155,7 +155,7 @@ void check_results(unsigned char output[MAX_X][MAX_Y])
 // if so, return a number > 0
 // else if three points are in line, return a number == 0
 // else in counterclockwise order, return a number < 0
-int check_clockwise( struct Triangle_2D triangle_2d )
+int check_clockwise( Triangle_2D triangle_2d )
 {
   int cw;
 
@@ -167,7 +167,7 @@ int check_clockwise( struct Triangle_2D triangle_2d )
 }
 
 // swap (x0, y0) (x1, y1) of a Triangle_2D
-void clockwise_vertices( struct Triangle_2D *triangle_2d )
+void clockwise_vertices( Triangle_2D *triangle_2d )
 {
 
   unsigned char tmp_x, tmp_y;
@@ -188,7 +188,7 @@ void clockwise_vertices( struct Triangle_2D *triangle_2d )
 // by Pineda algorithm
 // if so, return true
 // else, return false
-bool pixel_in_triangle( unsigned char x, unsigned char y, struct Triangle_2D triangle_2d )
+bool pixel_in_triangle( unsigned char x, unsigned char y, Triangle_2D triangle_2d )
 {
 
   int pi0, pi1, pi2;
@@ -242,7 +242,7 @@ unsigned char find_max( unsigned char in0, unsigned char in1, unsigned char in2 
 /*======================PROCESSING STAGES========================*/
 
 // project a 3D triangle to a 2D triangle
-void projection ( struct Triangle_3D triangle_3d, struct Triangle_2D *triangle_2d, int angle )
+void projection ( Triangle_3D triangle_3d, Triangle_2D *triangle_2d, int angle )
 {
   // Setting camera to (0,0,-1), the canvas at z=0 plane
   // The 3D model lies in z>0 space
@@ -283,7 +283,7 @@ void projection ( struct Triangle_3D triangle_3d, struct Triangle_2D *triangle_2
 }
 
 // calculate bounding box for a 2D triangle
-bool rasterization1 ( struct Triangle_2D triangle_2d, unsigned char max_min[], int max_index[])
+bool rasterization1 ( Triangle_2D triangle_2d, unsigned char max_min[], int max_index[])
 {
   // clockwise the vertices of input 2d triangle
   if ( check_clockwise( triangle_2d ) == 0 )
@@ -305,7 +305,7 @@ bool rasterization1 ( struct Triangle_2D triangle_2d, unsigned char max_min[], i
 }
 
 // find pixels in the triangles from the bounding box
-int rasterization2 ( bool flag, unsigned char max_min[], int max_index[], struct Triangle_2D triangle_2d, struct CandidatePixel fragment[] )
+int rasterization2 ( bool flag, unsigned char max_min[], int max_index[], Triangle_2D triangle_2d, CandidatePixel fragment[] )
 {
   // clockwise the vertices of input 2d triangle
   if ( flag )
@@ -335,7 +335,7 @@ int rasterization2 ( bool flag, unsigned char max_min[], int max_index[], struct
 }
 
 // filter hidden pixels
-int zculling ( int counter, struct CandidatePixel fragments[], int size, struct Pixel pixels[])
+int zculling ( int counter, CandidatePixel fragments[], int size, Pixel pixels[])
 {
 
   // initilize the z-buffer in rendering first triangle for an image
@@ -371,7 +371,7 @@ int zculling ( int counter, struct CandidatePixel fragments[], int size, struct 
 }
 
 // color the frame buffer
-void coloringFB(int counter, int size_pixels, struct Pixel pixels[], unsigned char frame_buffer[MAX_X][MAX_Y])
+void coloringFB(int counter, int size_pixels, Pixel pixels[], unsigned char frame_buffer[MAX_X][MAX_Y])
 {
 
   if ( counter == 0 )
@@ -395,12 +395,12 @@ void coloringFB(int counter, int size_pixels, struct Pixel pixels[], unsigned ch
 }
 
 /*========================TOP FUNCTION===========================*/
-void rendering_sw( struct Triangle_3D triangle_3ds[NUM_3D_TRI], unsigned char output[MAX_X][MAX_Y])
+void rendering_sw( Triangle_3D triangle_3ds[NUM_3D_TRI], unsigned char output[MAX_X][MAX_Y])
 {
   // local variables
 
   // 2D triangle
-  struct Triangle_2D triangle_2ds;
+  Triangle_2D triangle_2ds;
   // projection angle
   int angle = 0;
 
@@ -409,10 +409,10 @@ void rendering_sw( struct Triangle_3D triangle_3ds[NUM_3D_TRI], unsigned char ou
   int max_index[1];
 
   // fragments
-  struct CandidatePixel fragment[500];
+  CandidatePixel fragment[500];
 
   // pixel buffer
-  struct Pixel pixels[500];
+  Pixel pixels[500];
 
   // processing NUM_3D_TRI 3D triangles
   for (int i = 0; i < NUM_3D_TRI; i++ )

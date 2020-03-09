@@ -2,54 +2,60 @@
 from artisan.core import *
 from artisan.rose import *
 
-import subprocess 
-import os
-
+import subprocess, os
 import opencl_host_strings
 
 def populate_opencl_host(ast, path_to_source, path_to_host, kernel_args):
 
     project = ast.project
 
-    # find all malloc/new calls, determine arg size, instrument code 
-    # TODO: handle static allocation 
-    for arg in [p for p in kernel_args if "*" in p['type']]:    
-        vd_table = project.query("vd:VarDef", where="vd.name == '%s'" % arg['name'])
-        for row in vd_table:
-            decl = row.vd.decl().unparse()
-            if "malloc" in decl:
-                idx = decl.index("malloc") + 6
-                substring = decl[idx:]
-                size = substring[substring.find("("):substring.rfind(")")]
-                arg['size'] = size
-                row.vd.decl().instrument(pos='before', code='#ifdef HW\n' + decl.replace("malloc", "aocl_utils::alignedMalloc") + "\n#else\n")
-                row.vd.decl().instrument(pos='after', code='#endif')
-            elif "new" in decl:
-                s = decl.index('[') +1
-                e = decl.index(']')
-                arg['size'] = decl[s:e] + "*sizeof(" + row.vd.type().unparse().replace('*', '').strip() + ")"
-                alloc_string = arg['type'] + " " + arg['name'] + " = " + "(" + arg['type'] + ") aocl_utils::alignedMalloc(" + arg['size'] + ");\n"
-                row.vd.decl().instrument(pos='before', code='#ifdef HW\n' + alloc_string + "\n#else\n")
-                row.vd.decl().instrument(pos='after', code='#endif')
-
-
-    # same for free
-    calls = project.query("g:Global => c:Call")
+    # find all calls to malloc and  free, isntrument with hardware version, check size for malloc
+    # TODO: better way to get pointer sizes
+    calls = project.query("g:Global => c:ExprCall")
     for row in calls:
         if row.c.in_code() and row.c.name() == 'free':
             row.c.stmt().instrument(pos='before', code='#ifdef HW\n' + row.c.stmt().unparse().replace("free", "aocl_utils::alignedFree") + "\n#else\n")
             row.c.stmt().instrument(pos='after', code='#endif')
-    
-    # for delete, need statements
-    # TODO: better way  to find delete
-    exprstmts = project.query("g:Global => s:ExprStmt")
-    for row in exprstmts:
-        if row.s.in_code() and 'delete' in row.s.unparse(): 
-            for a in [a['name'] for  a in kernel_args]:
-                if a in row.s.unparse():
-                    free_string = "aocl_utils::alignedFree(" + a + ");"
-                    row.s.instrument(pos='before', code='#ifdef HW\n' + free_string + "\n#else\n")
-                    row.s.instrument(pos='after', code='#endif')
+        if row.c.in_code() and row.c.name() == 'malloc':
+            stmt = row.c.stmt().unparse()
+            s = stmt.index('malloc')+6
+            size = stmt[s:].replace(';','').strip()[:-1]
+            a = row.c.parent().parent().parent().unparse().strip()
+            for arg in kernel_args:
+                if arg['name'] == a:
+                    arg['size'] = size
+            row.c.stmt().instrument(pos='before', code='#ifdef HW\n' + row.c.stmt().unparse().replace("malloc", "aocl_utils::alignedMalloc") + "\n#else\n")
+            row.c.stmt().instrument(pos='after', code='#endif')
+
+ 
+    # find all new / delete
+    news = project.query("g:Global => n:ExprNew")
+    for row in news:
+        if row.n.in_code():
+            a = row.n.parent().parent().unparse().strip()
+            type_str = row.n.type().unparse()
+            ptr_type = type_str.split()[0]
+            size = type_str[type_str.index('[')+1:type_str.index(']')] + " * sizeof(" + ptr_type + ")"
+            # TODO: better way to get parent statement?
+            # if row.n.parent().parent().parent().is_entity('Stmt'):
+                # print('found statement')
+                # stmt = row.n.parent().parent().parent()
+            stmt = row.n.stmt()
+            malloc_string = ptr_type + " *" + a + " = (" + ptr_type + " *) aocl_utils::alignedMalloc(" + size + ");"
+            # print(malloc_string)
+            stmt.instrument(pos='before', code='#ifdef HW\n' + malloc_string + "\n#else\n")
+            stmt.instrument(pos='after', code='#endif')
+            for arg in kernel_args:
+                if arg['name'] == a:
+                    arg['size'] = size
+    deletes = project.query("g:Global => d:ExprDelete")
+    for row in deletes:
+        if row.d.in_code():
+            free_string = "aocl_utils::alignedFree(" + row.d.var().unparse().strip() + ");"
+            # TODO: better way to get parent statement?
+            
+            row.d.stmt().instrument(pos='before', code='#ifdef HW\n' + free_string + "\n#else\n")
+            row.d.stmt().instrument(pos='after', code='#endif')
 
     # generate all opencl string blocks, find the right places in the code to insert 
     # define buffers for kernel args
@@ -77,19 +83,20 @@ def populate_opencl_host(ast, path_to_source, path_to_host, kernel_args):
     for buffer in buffers_to_initialise:
         initialise_cl_ints +=  buffer + "_buffer = " + buffer  +  ";\n"
 
-    # create write buffers for kernel pointer args
+    # createbuffers for kernel pointer args
+    cl_rw = {'R': "CL_MEM_READ_ONLY", 'RW': "CL_MEM_READ_WRITE", 'W': "CL_MEM_WRITE_ONLY"}
     create_buffers = "cl_int status1;\n"
     buffers_to_release = []
     for arg in kernel_args:
-        if "*" in arg['type'] and "READ" in arg['rw']:
-            create_buffers += arg['name'] + "_buffer = clCreateBuffer(context, " + arg['rw'] + ", " + arg['size'] + ", 0, &status1);\n" 
+        if "*" in arg['type']:
+            create_buffers += arg['name'] + "_buffer = clCreateBuffer(context, " + cl_rw[arg['rw']] + ", " + arg['size'] + ", 0, &status1);\n" 
             create_buffers += 'checkError(status1, "Failed to create ' + arg['name'] + ' buffer.");\n'
             buffers_to_release.append(arg['name'] + "_buffer")
 
     # enqueue write buffers
     enqueue_write_buffers = "cl_int status2;\n"
     for arg in kernel_args:
-        if "*" in arg['type']:
+        if "*" in arg['type'] and "R" in arg['rw']:
             enqueue_write_buffers += "status2 = clEnqueueWriteBuffer(queue," + arg['name'] + "_buffer,0,0," + arg['size'] + "," + arg['name'] + ",0,0,0);\n"
             enqueue_write_buffers += 'checkError(status2, "Failed to enqueue write buffer ' + arg['name'] + '");\n'
 
@@ -106,7 +113,7 @@ def populate_opencl_host(ast, path_to_source, path_to_host, kernel_args):
     # enqueue read buffers
     enqueue_read_buffers = "cl_int status4;\n"
     for arg in kernel_args:
-        if "*" in arg['type'] and "WRITE" in arg['rw']:
+        if "*" in arg['type'] and "W" in arg['rw']:
             enqueue_read_buffers += "status4 = clEnqueueReadBuffer(queue, " + arg['name'] + "_buffer, 1, 0, " + arg['size'] + ", " + arg['name'] + ", 0, 0, 0);\n"
             enqueue_read_buffers += 'checkError(status4, "Failed to enqueue read buffer ' + arg['name'] + '");\n'
 

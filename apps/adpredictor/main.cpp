@@ -110,6 +110,8 @@ int main(int argc, char *argv[]) {
   fp_y = NULL; fp_pm = NULL; fp_pv = NULL;
 
   for (uint64_t st = 0; st < volume; st++) {
+    #pragma artisan-hls parallel {"is_parallel": "True"}
+    #pragma artisan-hls vars {"prior_m": "R", "prior_v": "R", "y": "R", "post_m" : "W", "post_s": "W"}
     float s = 0.0;
     float m = 0.0;
     for (int i = 0; i < NUM_FEATURES; i++) {

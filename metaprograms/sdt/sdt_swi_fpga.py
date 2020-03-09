@@ -2,7 +2,7 @@
 from artisan.core import *
 from artisan.rose import *
 
-import os, subprocess 
+import os, subprocess, json
 
 from sdt_generate_hls_kernel import generate_hls_kernel
 from sdt_populate_cpp_kernel import populate_cpp_kernel
@@ -20,6 +20,13 @@ def create_swi_project(ast, template_path, source_path):
     # figure out all hotspot function arguments 
     hotspot_func = project.query("g:Global => f:FnDef{hotspot}")[0].f 
     params = hotspot_func.decl().params()
+
+    var_pragmas = [row for row in hotspot_func.query("p:Pragma") if 'artisan-hls' in row.p.directive() and 'vars' in row.p.directive()]
+    if len(var_pragmas) > 0:
+        directive = var_pragmas[0].p.directive()
+        vars_rw = json.loads(' '.join(directive.split()[directive.split().index('vars') + 1:]))
+    else:
+        vars_rw = {}
 
     # determine args, types, sizes if static 
     args = []
@@ -44,9 +51,11 @@ def create_swi_project(ast, template_path, source_path):
         else:
             arg['size'] = ""
             arg['string'] = arg['type'] + " " + arg['name']
-        arg['rw'] = 'CL_MEM_READ_WRITE' # TODO
+        if arg['name'] in vars_rw:
+            arg['rw'] = vars_rw[arg['name']]
+        else:
+            arg['rw'] = 'RW' 
         args.append(arg)
-
     
     populate_cpp_kernel(project, 'hotspot', 'swi_project/cpp_kernel.cpp', args)
     populate_opencl_kernel('swi_project/project/device/kernel.cl', args)

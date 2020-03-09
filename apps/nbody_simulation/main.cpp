@@ -32,7 +32,7 @@ typedef struct {
 
 /**
  * \brief Run the N-body simulation on the CPU.
- * \param [in]  N               Number of particles
+ * \param [in]  n               Number of particles
  * \param [in]  EPS             Damping factor
  * \param [in]  m               Masses of the N particles
  * \param [in]  in_particles    Initial state of the N particles
@@ -41,18 +41,18 @@ typedef struct {
 
 #define EPS 100
 
-void run_cpu(int N, const float *m,
+void run_cpu(int n, const float *m,
         const particle_t *in_particles, particle_t *out_particles)
 {
-    particle_t *p = (particle_t *) malloc(N * sizeof(particle_t));
-    memcpy(p, in_particles, N * sizeof(particle_t));
+    particle_t *p = (particle_t *) malloc(n * sizeof(particle_t));
+    memcpy(p, in_particles, n * sizeof(particle_t));
 
-    coord3d_t *a = (coord3d_t *) malloc(N * sizeof(coord3d_t));
+    coord3d_t *a = (coord3d_t *) malloc(n * sizeof(coord3d_t));
 
-    memset(a, 0, N * sizeof(coord3d_t));
+    memset(a, 0, n * sizeof(coord3d_t));
 
-    for (int q = 0; q < N; q++) {
-        for (int j = 0; j < N; j++) {
+    for (int q = 0; q < n; q++) {
+        for (int j = 0; j < n; j++) {
             float rx = rx = p[j].p.x - p[q].p.x;
             float ry = p[j].p.y - p[q].p.y;
             float rz = p[j].p.z - p[q].p.z;
@@ -65,7 +65,7 @@ void run_cpu(int N, const float *m,
         }
     }
 
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < n; i++) {
         p[i].p.x += p[i].v.x;
         p[i].p.y += p[i].v.y;
         p[i].p.z += p[i].v.z;
@@ -74,7 +74,7 @@ void run_cpu(int N, const float *m,
         p[i].v.z += a[i].z;
     }
 
-    memcpy(out_particles, p, N * sizeof(particle_t));
+    memcpy(out_particles, p, n * sizeof(particle_t));
 
     free(p);
     free(a);
@@ -83,16 +83,16 @@ void run_cpu(int N, const float *m,
 int main(int argc, char **argv)
 {
 
-    int N = atoi(argv[1]);
+    int n = atoi(argv[1]);
 
     particle_t *particles;
     float *m;
 
-    particles = (particle_t *) malloc(N * sizeof(particle_t));
-    m = (float *) malloc(N * sizeof(float));
+    particles = (particle_t *) malloc(n * sizeof(particle_t));
+    m = (float *) malloc(n * sizeof(float));
 
     srand(100);
-    for (int i = 0; i < N; i++)
+    for (int i = 0; i < n; i++)
     {
         m[i] = (float)rand()/100000;
         particles[i].p.x = (float)rand()/100000;
@@ -104,12 +104,12 @@ int main(int argc, char **argv)
     }
 
     particle_t *out_particles = NULL;
-    out_particles = (particle_t *) malloc(N * sizeof(particle_t));
+    out_particles = (particle_t *) malloc(n * sizeof(particle_t));
 
-    printf("Running on CPU with %d particles...\n", N);
+    printf("Running on CPU with %d particles...\n", n);
     struct timeval t1, t2;
     gettimeofday(&t1, NULL);
-    run_cpu(N, m, particles, out_particles);
+    run_cpu(n, m, particles, out_particles);
     gettimeofday(&t2, NULL);
     printf("CPU computation took %lfs\n", (double)(t2.tv_usec-t1.tv_usec)/1000000 + (double)(t2.tv_sec-t1.tv_sec));
 

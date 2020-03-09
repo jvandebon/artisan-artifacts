@@ -35,11 +35,13 @@ def generate_hls_kernel(project, path_to_hls_kernel):
             if 'artisan-hls component' in directive:
                 idx = directive.split().index('component') + 1
                 component = directive.split()[idx]
-            if 'artisan-hls spec' in directive:
+            elif 'artisan-hls spec' in directive:
                 func_idx = directive.split().index('spec') + 1 
                 func = directive.split()[func_idx]
                 spec = json.loads(' '.join(directive.split()[func_idx+1:]))
                 specs[func] = spec
+            elif 'artisan-hls' in directive:
+                row.p.instrument(pos='replace', code='')
 
     if component ==  "":
         print("No HLS component function specified.")

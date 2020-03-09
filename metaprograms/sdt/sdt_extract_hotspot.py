@@ -1,7 +1,6 @@
 #!/usr/bin/env artisan
 from artisan.core import *
 from artisan.rose import *
-
 import sys
 
 # inputs: ast, loop to be extracted, function 
@@ -29,9 +28,7 @@ def extract_hotspot(ast, hotspot_loop_tag, hotspot_loop_func):
             if row.e.unparse().strip() not in local_vars and not row.e.is_val() and not row.e.parent().sg_type_real in bad_parent_types:
                 a = row.e.unparse().strip()
                 # TODO: check for constants in a better way 
-                if a.isupper():
-                    continue
-                if a not in other_vars:
+                if not a.isupper() and a not in other_vars:
                     row.e.instrument(pos='replace', code=row.e.unparse())
                     other_vars.append(a)
                     type_str = row.e.type().unparse()

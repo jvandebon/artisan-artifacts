@@ -16,15 +16,15 @@ def identify_hotspots(ast, threshold):
     label = 0
     for row in loop_table:
         loop = row.l
-        if loop.body().in_code() and not (loop.parent().parent().is_entity('ForLoop') or loop.parent().is_entity('ForLoop')): # TODO: check if outermost loop 
-            loop.body().instrument(pos='begin', code='Artisan::Timer __timer__("%s", Artisan::op_add);' % loop.tag()) 
+        if loop.is_outermost(): #loop.body().in_code() and not (loop.parent().parent().is_entity('ForLoop') or loop.parent().is_entity('ForLoop')): # TODO: check if outermost loop 
+            loop.body().instrument(pos='replace', code='{\nArtisan::Timer __timer__("%s", Artisan::op_add); %s' % (loop.tag(), loop.body().unparse()[1:])) 
 
     # Instrument main function with a timer and report 
     wrap_fn(project, 'main', 'main_', after='Artisan::report("loop_times.json");') 
     ast.commit()
     project = ast.project
     main_func = project.query("f:FnDef{main_}")[0].f
-    main_func.body().instrument(pos='begin', code='Artisan::Timer __timer__("main", Artisan::op_add);')
+    instrument_block(main_func.body(), 'Artisan::Timer __timer__("main", Artisan::op_add);', entry=True) #main_func.body().instrument(pos='begin', code='Artisan::Timer __timer__("main", Artisan::op_add);')
     ast.commit()  
 
     # build and run instrumented code, load reported results 
@@ -51,6 +51,7 @@ def identify_hotspots(ast, threshold):
     
     return hotspots
 
+# meta.help('ForLoop')
 # ast = model(args=cli(), ws=Workspace('daa'))
 # hotspots = identify_hotspots(ast, 50.0)
 # subprocess.call(['rm', '-rf', 'daa'])

@@ -2,10 +2,7 @@
 from artisan.core import *
 from artisan.rose import *
 
-log.level = 2
-
-def isParallel(loop):
-    return True
+import json
 
 def multithread_loop(ast, loop_tag, path_to_source, num_threads):
 
@@ -15,8 +12,14 @@ def multithread_loop(ast, loop_tag, path_to_source, num_threads):
     # TODO: not only for loops
     loop = project.query("l:ForLoop{%s}" % loop_tag)[0].l
 
-    # TODO: verify if parallel
-    if not isParallel(loop):
+    # verify that loop is parallel
+    parallel_pragmas = [row for row in loop.query("p:Pragma") if 'artisan-hls' in row.p.directive() and 'parallel' in row.p.directive()]
+    if len(parallel_pragmas) == 0:
+        print("Can't determine if loop is parallel.")
+        exit(0)
+    directive = parallel_pragmas[0].p.directive()
+    parallel = json.loads(' '.join(directive.split()[directive.split().index('parallel') + 1:]))
+    if parallel['is_parallel'] != 'True':
         print("Cannot parallelise loop with OpenMP.")
         exit(0)
 
@@ -39,5 +42,3 @@ def multithread_loop(ast, loop_tag, path_to_source, num_threads):
         contents = contents[:i+6] + "-fopenmp " + contents[i+6:]
         with open(path_to_source + '/Makefile', 'w') as makefile:
             makefile.write(contents)
-    
-
