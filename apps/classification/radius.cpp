@@ -23,18 +23,18 @@ void radiusCPU(
 
 int main(int argc, char **argv) {
 
-	int POINTS = atoi(argv[1]);
+	int points = atoi(argv[1]);
 	srand(100);
-	float *classes = (float *)malloc(DIM*CLASSES*SIZE_FLOAT);
-	float *data = (float *)malloc(POINTS*DIM*SIZE_FLOAT);
-	float *radii2 = (float *)malloc(CLASSES*SIZE_FLOAT);
-	int *out = (int *)malloc(POINTS*CLASSES*sizeof(int));
+	float *classes = (float *)malloc(DIM*CLASSES*sizeof(float));
+	float *data = (float *)malloc(points*DIM*sizeof(float));
+	float *radii2 = (float *)malloc(CLASSES*sizeof(float));
+	int *out = (int *)malloc(points*CLASSES*sizeof(int));
 
 	for(int i = 0; i < CLASSES*DIM; i++) {
 		classes[i] = (float) rand() / 100000000;
 	}
 
-	for(int i = 0; i < DIM*POINTS; i++){
+	for(int i = 0; i < DIM*points; i++){
 			data[i] = (float) rand() / 100000000;
 	}
 
@@ -43,15 +43,15 @@ int main(int argc, char **argv) {
 		radii2[i] = radii2[i] * radii2[i];
 	}
 
-	for(int i = 0 ; i < CLASSES*POINTS; i++) {
+	for(int i = 0 ; i < CLASSES*points; i++) {
 		out[i] = 0;
 	}
-	for(int i = 0; i < POINTS; i++) {
+	for(int i = 0; i < points; i++) {
 		radiusCPU(classes, radii2, &data[DIM*i], &out[CLASSES*i]);
 	}
 	int total_in_class = 0;
 	int total_in_multiple = 0;
-	for(int i = 0; i < CLASSES*POINTS; i+=CLASSES){
+	for(int i = 0; i < CLASSES*points; i+=CLASSES){
 		int point = i / CLASSES;
 		int *result = &out[i];
                 int in_class = 0;

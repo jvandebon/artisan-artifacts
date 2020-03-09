@@ -4,7 +4,8 @@ from artisan.rose import *
 
 import os, subprocess 
 
-from sdt_populate_hls_library import populate_hls_library
+from sdt_generate_hls_kernel import generate_hls_kernel
+from sdt_populate_cpp_kernel import populate_cpp_kernel
 from sdt_populate_opencl_kernel import populate_opencl_kernel
 from sdt_populate_opencl_host import populate_opencl_host
 
@@ -46,6 +47,16 @@ def create_swi_project(ast, template_path, source_path):
         arg['rw'] = 'CL_MEM_READ_WRITE' # TODO
         args.append(arg)
 
-    populate_hls_library(project, 'swi_project/project/device/lib/library.cpp', args)
+    
+    populate_cpp_kernel(project, 'hotspot', 'swi_project/cpp_kernel.cpp', args)
     populate_opencl_kernel('swi_project/project/device/kernel.cl', args)
     populate_opencl_host(ast, source_path, 'swi_project/project/host/src/', args)
+    path_to_kernel = os.getcwd() + '/swi_project/cpp_kernel.cpp'
+    ast = model(args='"' + path_to_kernel + '"', ws=Workspace('ws'))
+
+    kernel_project = generate_hls_kernel(ast.project, 'swi_project/project/device/lib/library.cpp')
+    
+    subprocess.call(['rm', '-rf', 'ws'])
+
+# ast = model(args=cli(), ws=Workspace('temp'))
+# create_swi_project(ast, "/workspace/metaprograms/templates/", "temp/default")

@@ -22,6 +22,8 @@ else:
     hotspots = identify_hotspots(daa_ast, 50.0)
     subprocess.call(['rm', '-rf', 'daa'])
 
+NUM_THREADS = 8
+
 hotspot_loops = [tag for tag in hotspots if tag != 'main']
 if len(hotspot_loops) > 1:
     print("More than one hotspot loop identified.")
@@ -34,9 +36,19 @@ else:
     hotspot_loop_tag = hotspot_loops[0]
 
 # extract hotspot
-ast = model(args=cli(), ws=Workspace('openmp_project'))
+ast = model(args=cli(), ws=Workspace('openmp_ws'))
 # assumes only outermost loops so can get function name easy, double check this
 extract_hotspot(ast, hotspot_loop_tag, '_'.join(hotspot_loop_tag.split('_')[:-2]))
 
 # TODO: assumes for loop so can get tag easily
-multithread_loop(ast, 'hotspot_for_a', './openmp_project/default', 8)
+if 'for' in hotspot_loop_tag:
+    tag = 'hotspot_for_a'
+elif 'while' in hotspot_loop_tag:
+    tag = 'hotspot_while_a'
+elif 'do' in hotspot_loop_tag:
+    tag = 'hotspot_do_a'
+
+multithread_loop(ast, tag, './openmp_ws/default', NUM_THREADS)
+ast.export_to('openmp_project')
+subprocess.call(['cp', './openmp_ws/default/Makefile', './openmp_project'])
+subprocess.call(['rm', '-rf', 'openmp_ws'])

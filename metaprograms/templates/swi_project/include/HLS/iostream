@@ -1,0 +1,1 @@
+static_assert(false, "HLS/iostream has been deprecated. Please use the standard iostream, and guard calls to std::cout, std::cerr with #ifndef HLS_SYNTHESIS to prevent synthesis for FPGA targets.");

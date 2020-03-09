@@ -2,10 +2,12 @@
 from artisan.core import *
 from artisan.rose import *
 
-import sys, os, json, subprocess
+import sys, os, json, subprocess, time
 
 sys.path.insert(1, '/workspace/metaprograms/sdt/')
 sys.path.insert(2, '/workspace/metaprograms/daa/')
+
+log.level = 2
 
 from daa_hsd import identify_hotspots
 from daa_hsc import hw_synthesizable
@@ -13,6 +15,7 @@ from daa_check_utilisation import check_utilisation
 from sdt_extract_hotspot import extract_hotspot
 from sdt_swi_fpga import create_swi_project
 from sdt_unr import unroll_loop
+from sdt_generate_hls_kernel import generate_hls_kernel
 
 ## UDT to optimise for an unrolled single work item FPGA kernel
 
@@ -36,37 +39,6 @@ def unroll(ast, project, UF):
         if fixed_bounds(row.l) != False:
             unroll_loop(ast, row.l.tag(), unroll_factor=UF)
 
-# TEMPORARY ********************************************
-def fix_attributes(ast):
-    project = ast.project
-    func_table = project.query('g:Global => f:FnDef')
-    old = []
-    new = []
-    for row in func_table:
-        if row.f.in_code():
-            s = row.f.unparse().index('(')+1
-            e = row.f.unparse().index(')')
-            old_args = row.f.unparse()[s:e]
-            old_array = old_args.split(',')
-            new_array = []
-            for p in old_array:
-                if '*' in p:
-                    new_array.append('OCL_ADDRSP_GLOBAL ' + p)
-                else:
-                    new_array.append(p)
-            new_args = ','.join(new_array)
-            old.append(old_args)
-            new.append(new_args)
-
-    with open(os.getcwd() + '/swi_project/project/device/lib/library.cpp', 'r') as f:
-        contents = f.read()
-    for i in range(len(old)):
-        contents = contents.replace(old[i], new[i])
-    contents = contents.replace('std::', '')
-    with open(os.getcwd() + '/swi_project/project/device/lib/library.cpp', 'w') as f:
-        f.write(contents)
-# TEMPORARY ********************************************
-
 def generate_reports():
     # make library, first stage compilation of opencl kernel 
     command = ['ssh', '-t', '172.17.0.1']
@@ -75,7 +47,6 @@ def generate_reports():
     command += ['source', 'generate_report.sh']
     subprocess.call(command) 
 
-# meta.help('Call')
 if not os.path.exists("./swi_project"):
 
     # identify hotspot loop for acceleration
@@ -113,52 +84,55 @@ if not os.path.exists("./swi_project"):
     create_swi_project(ast, "/workspace/metaprograms/templates/", "swi_ws/default")
     subprocess.call(['rm', '-rf', 'swi_ws'])
 
+if os.path.exists(os.getcwd() + '/swi_project/cpp_kernel/cpp_kernel.cpp'):
+    print("PATH EXISTS")
 
-# new ast for library.cpp
-path_to_library = os.getcwd() + '/swi_project/project/device/lib/library.cpp'
-path_to_hls_include = os.getcwd() + '/swi_project/include'
+if os.path.exists("./swi_project"):
+    print("SWI project files ready for optimisation.")
+    # new ast for kernel
+    path_to_kernel = os.getcwd() + '/swi_project/cpp_kernel.cpp'
 
-ast = model(args='"' + path_to_library + '" -I/artisan/artisan/rose/repo/cpp -I' + path_to_hls_include, ws=Workspace('lib_ws'))
-project = ast.project
+    ## BUG: signal clash or segmentation fault happens here. 
+    ast = model(args='"' + path_to_kernel + '"', ws=Workspace('kernel_ws'))
+    print("Kernel AST created.")
 
-# DSE ON LOOP UNROLL FACTOR
-UF = 2
-overmapped = False
-prev_percentages = []
-while not overmapped:
-    print("Trying to unroll fixed loops by factor:", UF, "...")
+    # DSE ON LOOP UNROLL FACTOR
+    UF = 2
+    overmapped = False
+    prev_percentages = []
+    while not overmapped:
+        print("Trying to unroll fixed loops by factor:", UF, "...")
 
-    # instrument code to unroll fixed bound loops
-    unroll(ast, project, UF)
-    ast.commit()
-    ast.export_to('./swi_project/project/device/lib/')
-    
-    ## TEMPORARY FIX
-    fix_attributes(ast)
-
-    # run first stage opencl compile to generate design reports
-    generate_reports()
-    # parse reports to check utilisation estimates
-    try:
-        utilisation = check_utilisation('./swi_project/project/bin/kernel/reports')
-    except:
-        print("Unrolling by %d overmapped, rolling back to %d" % (UF, int(UF/2)))
-        ast.undo(sync=True)
+        # instrument code to unroll fixed bound loops
+        unroll(ast, ast.project, UF)
         ast.commit()
-        ast.export_to('./swi_project/project/device/lib/')
-        fix_attributes(ast)
-        break
-    
-    percentages = [utilisation[u]['percentage'] for u in utilisation]
-    # if no change, or if any resources are at > 100%, go back to previous unroll factor, finish 
-    if max(percentages) > 200 or percentages == prev_percentages:
-        print("Unrolling by %d overmapped or made no change, rolling back to %d" % (UF, int(UF/2)))
-        ast.undo(sync=True)
-        ast.export_to('./swi_project/project/device/lib/')
-        break
-    else:  # if all resources are < 100%, increase unroll factor 
-        UF = UF * 2
 
-    prev_percentages = percentages
+        generate_hls_kernel(ast.project, 'swi_project/project/device/lib/library.cpp')
 
-subprocess.call(['rm', '-rf', 'lib_ws'])   
+        # run first stage opencl compile to generate design reports
+        generate_reports()
+        # parse reports to check utilisation estimates
+        try:
+            utilisation = check_utilisation('./swi_project/project/bin/kernel/reports')
+        except:
+            print("Unrolling by %d overmapped, rolling back to %d" % (UF, int(UF/2)))
+            ast.undo(sync=True)
+            ast.commit()
+            generate_hls_kernel(ast.project, 'swi_project/project/device/lib/library.cpp')
+            break
+        
+        percentages = [utilisation[u]['percentage'] for u in utilisation]
+        print(percentages)
+        # if no change, or if any resources are at > 100%, go back to previous unroll factor, finish 
+        if max(percentages) > 90 or percentages == prev_percentages:
+            print("Unrolling by %d overmapped or made no change, rolling back to %d" % (UF, int(UF/2)))
+            ast.undo(sync=True)
+            ast.commit()
+            generate_hls_kernel(ast.project, 'swi_project/project/device/lib/library.cpp')
+            break
+        else:  # if all resources are < 100%, increase unroll factor 
+            UF = UF * 2
+
+        prev_percentages = percentages
+
+    subprocess.call(['rm', '-rf', 'kernel_ws'])   

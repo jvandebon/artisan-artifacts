@@ -45,9 +45,9 @@ AOCL_LINK_CONFIG := $(shell aocl link-config )
 
 # Compilation flags
 ifeq ($(DEBUG),1)
-CXXFLAGS += -g
+CXXFLAGS += -g -std=c++11
 else
-CXXFLAGS += -O2
+CXXFLAGS += -O2 -std=c++11
 endif
 
 # Compiler
@@ -71,7 +71,7 @@ all : $(TARGET_DIR)/$(TARGET)
 
 # Host executable target.
 $(TARGET_DIR)/$(TARGET) : Makefile $(SRCS) $(INCS) $(TARGET_DIR)
-	$(ECHO)$(CXX) $(CPPFLAGS) $(CXXFLAGS) -fPIC $(foreach D,$(INC_DIRS),-I$D) \
+	$(ECHO)$(CXX) -DHW $(CPPFLAGS) $(CXXFLAGS) -fPIC $(foreach D,$(INC_DIRS),-I$D) \
 			$(AOCL_COMPILE_CONFIG) $(SRCS) $(AOCL_LINK_CONFIG) \
 			$(foreach D,$(LIB_DIRS),-L$D) \
 			$(foreach L,$(LIBS),-l$L) \

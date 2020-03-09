@@ -1,22 +1,18 @@
 #!/usr/bin/env artisan
 from artisan.core import *
 from artisan.rose import *
-log.level = 2
 from hls_math_functions import hls_math_functions
 
 def get_called_funcs(project, func, funcs_called):
-    called_funcs = func.query("cf:Call")
+    called_funcs = func.query("cf:ExprCall")
     for row in called_funcs:
         new_func = row.cf
         if new_func.name() not in [f.name for f in funcs_called]:
             function_table = project.query("g:Global => f:FnDef", where="f.name == '%s'" % new_func.name())
-            if len(function_table) == 0:
-                continue
             for row in function_table:
-                function = row.f
-                if function.in_code():
-                    funcs_called.append(function)
-                    get_called_funcs(project, function, funcs_called)
+                if row.f.in_code():
+                    funcs_called.append(row.f)
+                    get_called_funcs(project, row.f, funcs_called)
 
 def hw_synthesizable(ast, func_name):
 
@@ -28,15 +24,16 @@ def hw_synthesizable(ast, func_name):
 
     for func in funcs_to_check:   
         # check for calls to unsupported functions 
-        # TODO: function pointer calls (not currently supported)
-        all_calls = func.query('c:Call')
+        all_calls = func.query('c:ExprCall')
         for row in all_calls:
             called_func = row.c
+            if called_func.name() == "":
+                # function pointer, not supported
+                print("Function pointers are not HLS supported.")
+                return False
             # check if defined in source 
             function_table = project.query("f:FnDef{%s}" % called_func.name())
-            if len(function_table) != 0 and function_table[0].f.in_code():
-                continue # function defined in source, so fine
-            if called_func.name() not in hls_math_functions:
+            if not (len(function_table) != 0 and function_table[0].f.in_code()) and called_func.name() not in hls_math_functions:
                 print("%s is not a HLS supported function." % called_func.name())
                 return False
         
@@ -63,8 +60,6 @@ def hw_synthesizable(ast, func_name):
         get_called_funcs(project, func, funcs_called)
         for fc in funcs_called:
             if func.decl().unparse() == fc.decl().unparse():
-                print(func.decl().unparse())
-                print(fc.decl().unparse())
                 print("Recursion is not supported for HW synthesis (%s)." % func.name)
                 return False
     

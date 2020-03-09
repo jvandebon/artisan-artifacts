@@ -9,9 +9,8 @@ def unroll_loop(ast, loop_tag, unroll_factor=0):
 
     # check if there is already a pragma unroll associated with this loop
     pragmas = project.query("g:Global => p:Pragma")
-    unroll_pragmas = [row for row in pragmas if row.p.in_code() and 'unroll' in row.p.directive()]
-    for row in unroll_pragmas:
-        if row.p.next().unparse() == loop.unparse():
+    for row in pragmas:
+        if row.p.in_code() and 'unroll' in row.p.directive() and row.p.next().unparse() == loop.unparse():
             # if yes, modify value
             row.p.instrument(pos='replace', code='#pragma unroll %s' % str(unroll_factor))
             return

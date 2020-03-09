@@ -8,5 +8,7 @@
 
 *OTHER_FUNCS*
 
-extern "C" void lib_func(*FUNC_ARGS*)  
+extern "C"{
+void lib_func(*FUNC_ARGS*)  
 *FUNC_BODY*
+} 
