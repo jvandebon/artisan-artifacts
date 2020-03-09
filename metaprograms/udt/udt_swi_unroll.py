@@ -47,6 +47,12 @@ def generate_reports():
     command += ['source', 'generate_report.sh']
     subprocess.call(command) 
 
+def rollback(UF, ast):
+    print("Unrolling by %d overmapped or made no change, rolling back to %d" % (UF, int(UF/2)))
+    ast.undo(sync=True)
+    ast.commit()
+    generate_hls_kernel(ast.project, 'swi_project/project/device/lib/library.cpp')
+
 if not os.path.exists("./swi_project"):
 
     # identify hotspot loop for acceleration
@@ -84,18 +90,11 @@ if not os.path.exists("./swi_project"):
     create_swi_project(ast, "/workspace/metaprograms/templates/", "swi_ws/default")
     subprocess.call(['rm', '-rf', 'swi_ws'])
 
-
-if os.path.exists(os.getcwd() + '/swi_project/cpp_kernel/cpp_kernel.cpp'):
-    print("PATH EXISTS")
-
 if os.path.exists("./swi_project"):
-    print("SWI project files ready for optimisation.")
     # new ast for kernel
     path_to_kernel = os.getcwd() + '/swi_project/cpp_kernel.cpp'
-
     ## BUG: signal clash or segmentation fault happens here. 
     ast = model(args='"' + path_to_kernel + '"', ws=Workspace('kernel_ws'))
-    print("Kernel AST created.")
 
     # DSE ON LOOP UNROLL FACTOR
     UF = 2
@@ -116,20 +115,13 @@ if os.path.exists("./swi_project"):
         try:
             utilisation = check_utilisation('./swi_project/project/bin/kernel/reports')
         except:
-            print("Unrolling by %d overmapped, rolling back to %d" % (UF, int(UF/2)))
-            ast.undo(sync=True)
-            ast.commit()
-            generate_hls_kernel(ast.project, 'swi_project/project/device/lib/library.cpp')
+            rollback(UF, ast)
             break
         
         percentages = [utilisation[u]['percentage'] for u in utilisation]
-        print(percentages)
         # if no change, or if any resources are at > 100%, go back to previous unroll factor, finish 
         if max(percentages) > 90 or percentages == prev_percentages:
-            print("Unrolling by %d overmapped or made no change, rolling back to %d" % (UF, int(UF/2)))
-            ast.undo(sync=True)
-            ast.commit()
-            generate_hls_kernel(ast.project, 'swi_project/project/device/lib/library.cpp')
+            rollback(UF, ast)
             break
         else:  # if all resources are < 100%, increase unroll factor 
             UF = UF * 2
