@@ -1,8 +1,7 @@
 
 For both demos, you will need to have artisan installed locally and be running inside the artisan Docker container. For installation, follow the steps on the [artisan repository](https://github.com/ckiddo74/artisan).
 
-![Image of Yaktocat](https://octodex.github.com/images/yaktocat.png)
-![Image of Yaktocat](https://drive.google.com/file/d/1IbzxO4wlvP5A3eNTDh371MQn-ixXV6sU/view?usp=sharing)
+![Workflow](https://github.com/jvandebon/artisan-artefacts/blob/master/demo/design_workflow_new.pdf)
 
 ## Demo 1: Multi-Threaded CPU Optimisaton
 
