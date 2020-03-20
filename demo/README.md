@@ -55,22 +55,25 @@ This demonstration shows how to automatically optimise a C++ application (AdPred
 ### Steps
 
 1. Move into the base directory: ```cd artisan-artefacts```
-2. Start the artisan Docker container: ```artisan```
+2. Modify the ```INTEL_FPGA_ROOT``` variable in ```metaprograms/templates/swi_project/project/setup.sh``` to point to your local Quartus Prime 19.3 installation directory
+3. Modify the ```artisan-artifacts``` variable in ```metaprograms/udt/udt_swi_unroll``` to point to the path to your cloned version of this repository.
 
-3. Run the provided script to automatically execute steps 4 and 5 (```source demo/demo2_a.sh```), or continue manually as follows:
+4. Start the artisan Docker container: ```artisan```
 
-4. Move to the adpredictor application directory: ```cd apps/adpredictor```
-5. Optimise the application: ```python3 ../../metaprograms/udt/udt_swi_unroll.py main.cpp```
+5. Run the provided script to automatically execute steps 6 and 7 (```source demo/demo2_a.sh```), or continue manually as follows:
 
-6. Exit from the Docker environment: ```exit```.  The remaining steps should be executed on the host machine. 
+6. Move to the adpredictor application directory: ```cd apps/adpredictor```
+7. Optimise the application: ```python3 ../../metaprograms/udt/udt_swi_unroll.py main.cpp```
 
-7. Run the provided script to automatically execute steps 8-12 (```source demo/demo2_b.sh```), or continue manually as follows:
+8. Exit from the Docker environment: ```exit```.  The remaining steps should be executed on the host machine. 
 
-8. Build the HLS kernel: ```cd swi_project/project/device/lib ; make clean ; make```
-9. Synthesize the design: ```cd apps/adpredictor/swi_project/project ; source build_kernel.sh``` (note: may take hours)
-10. Program the FPGA: ```source program_device.sh```
-11. Build the host application: ```make```
-12. Run the synthesized hardware: ```./bin/host 8388608 `pwd`/../../../inputs/adpredictor/```
+9. Run the provided script to automatically execute steps 10-14 (```source demo/demo2_b.sh```), or continue manually as follows:
+
+10. Build the HLS kernel: ```cd swi_project/project/device/lib ; make clean ; make```
+11. Synthesize the design: ```cd apps/adpredictor/swi_project/project ; source build_kernel.sh``` (note: may take hours)
+12. Program the FPGA: ```source program_device.sh```
+13. Build the host application: ```make```
+14. Run the synthesized hardware: ```./bin/host 8388608 `pwd`/../../../inputs/adpredictor/```
 
 The UDT metaprogram in step 5 automatically optimises the application as follows:
 - The input program source (```/apps/adpredictor/main.cpp```) is instrumented with timers on each outer loop, built, and run to identify a program hotspot comprising > 50% of the overall execution time. 
