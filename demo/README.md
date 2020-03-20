@@ -15,7 +15,7 @@ This demonstration shows how to automatically optimise a C++ application (AdPred
 
 1. Move into the base directory: ```cd artisan-artefacts```
 2. Start the artisan Docker container: ```artisan```
-3. Run the provided script, ```source demo/demo1.sh``` to automatically execute steps 4-6, or continue manually as follows:
+3. Run the provided script to automatically execute steps 4-6 (```source demo/demo1.sh```), or continue manually as follows:
 
 4. Move to the adpredictor application directory: ```cd apps/adpredictor```
 5. Optimise the application: ```python3 ../../metaprograms/udt/udt_openmp.py```
@@ -43,14 +43,14 @@ This demonstration shows how to automatically optimise a C++ application (AdPred
 1. Move into the base directory: ```cd artisan-artefacts```
 2. Start the artisan Docker container: ```artisan```
 
-3. Run the provided script, ```source demo/demo2_a.sh``` to automatically execute steps 4 and 5, or continue manually as follows:
+3. Run the provided script to automatically execute steps 4 and 5 (```source demo/demo2_a.sh```), or continue manually as follows:
 
 4. Move to the adpredictor application directory: ```cd apps/adpredictor```
 5. Optimise the application: ```python3 ../../metaprograms/udt/udt_swi_unroll.py```
 
 6. Exit from the Docker environment: ```exit```.  The remaining steps should be executed on the host machine. 
 
-7. Run the provided script, ```source demo/demo2_b.sh``` to automatically execute steps 8-12, or continue manually as follows:
+7. Run the provided script to automatically execute steps 8-12 (```source demo/demo2_b.sh```), or continue manually as follows:
 
 8. Build the HLS kernel: ```cd swi_project/project/device/lib ; make clean ; make```
 9. Synthesize the design: ```cd apps/adpredictor/swi_project/project ; source build_kernel.sh``` (note: may take hours)
