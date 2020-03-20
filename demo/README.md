@@ -1,7 +1,9 @@
 
-For both demos, you will need to have artisan installed locally and be running inside the artisan Docker container. For installation, follow the steps on the [artisan repository](https://github.com/ckiddo74/artisan).
+For both demos, you will need to have artisan installed locally and be running inside the artisan Docker container. For installation, follow the steps on the [artisan repository](https://github.com/ckiddo74/artisan). You will also need this repository, if you haven't already done so, clone: ```git clone git@github.com:jvandebon/artisan-artefacts.git```.
 
-## Demo 1: Multi-Threaded CPU Optimisaton
+![Workflow](https://github.com/jvandebon/artisan-artefacts/blob/master/demo/workflow.png)
+
+## Demo 1: Multi-Threaded CPU Optimisaton (U-1)
 
 ### Motivation
 This demonstration shows how to automatically optimise a C++ application (AdPredictor) for a multi-CPU target platform using OpenMP. 
@@ -11,11 +13,10 @@ This demonstration shows how to automatically optimise a C++ application (AdPred
 
 ### Steps
 
-#TODO: include script to run all of these steps manually 
+1. Move into the base directory: ```cd artisan-artefacts```
+2. Start the artisan Docker container: ```artisan```
+3. Run the provided script, ```source demo/demo1.sh``` to automatically execute steps 4-6, or continue manually as follows:
 
-1. If you haven't already done so, clone this repository: ```git clone git@github.com:jvandebon/artisan-artefacts.git```
-2. Move into the base directory: ```cd artisan-artefacts```
-3. Start the artiisan docker container: ```artisan```
 4. Move to the adprecitor application directory: ```cd apps/adpredictor```
 5. Optimise the application: ```python3 ../../metaprograms/udt/udt_openmp.py```
 6. Run the optimised code: ```cd openmp_project ; make ; make run```
@@ -26,7 +27,7 @@ The UDT metaprogram in step 5 automatiically optimisess the application as follo
 - This hotspot loop is extracted into a separate function, and the code is instrumented to insert an OpenMP pragma above the loop instructing it to run with 8 threads. 
 - The resulting optimised code will be in the ```/openmp_project``` diriectory. 
 
-## Demo 2: Single Work Item FPGA Kernel Optimisation
+## Demo 2: Single Work Item FPGA Kernel Optimisation (U-2)
 
 ### Motivation
 
