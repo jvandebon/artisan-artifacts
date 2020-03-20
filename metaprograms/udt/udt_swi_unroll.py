@@ -19,7 +19,10 @@ from sdt_generate_hls_kernel import generate_hls_kernel
 
 ## UDT to optimise for an unrolled single work item FPGA kernel
 
-# TODO: how to check if loop has fixed bounds?
+artisan_artifacts = '~/Documents/Artisan/artisan-artefacts/'
+
+
+# TODO: check if loop has fixed bounds
 def fixed_bounds(loop):
     condition = loop.cond().unparse()
     if '<' in condition:
@@ -42,8 +45,8 @@ def unroll(ast, project, UF):
 def generate_reports():
     # make library, first stage compilation of opencl kernel 
     command = ['ssh', '-t', '172.17.0.1']
-    command += ['cd', '~/Documents/Artisan/artisan-artefacts/' + os.getcwd().replace('workspace', '') + '/swi_project/project/', ';']
-    command += ['source', '~/setup.sh', '>', '/dev/null', '2>&1', ';'] # TODO: why is this necessary?
+    command += ['cd', artisan_artifacts + os.getcwd().replace('workspace', '') + '/swi_project/project/', ';']
+    command += ['source', 'setup.sh', '>', '/dev/null', '2>&1', ';']
     command += ['source', 'generate_report.sh']
     subprocess.call(command) 
 

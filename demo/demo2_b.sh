@@ -1,5 +1,5 @@
 #!/bin/bash
-cd apps/adpredictor/swi_project/project
+cd apps/adp_test/swi_project/project
 
 cd device/lib ; make clean ; make   # build HLS kernel
 cd ../..
