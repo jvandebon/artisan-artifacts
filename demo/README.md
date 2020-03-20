@@ -1,5 +1,19 @@
 
-For both demos, you will need to have artisan installed locally and be running inside the artisan Docker container. For installation, follow the steps on the [artisan repository](https://github.com/ckiddo74/artisan). You will also need this repository, if you haven't already done so, clone: ```git clone git@github.com:jvandebon/artisan-artefacts.git```.
+For both demos, you will need to have artisan installed locally and be running inside the artisan Docker container. 
+
+### Preparation Steps:
+
+1. Install [artisan](https://github.com/ckiddo74/artisan) (requires [Docker](https://docs.docker.com/) and an internet connection):
+    - ```git clone https://github.com/ckiddo74/artisan.git``` into <artisan.git>
+    - ```export PATH=<artisan.git>/bin:$PATH```
+    - ```export ARTISAN_ROOT=<root artisan dir>```
+    - ```cd <artisan.git>```
+    - Load the development environment: 
+    ```artisan``` 
+    - Install: 
+    ```artisan-dev:$/workspace$ cd setup```
+    ```artisan-dev:$/workspace/setup$ make -j <N>```
+2. Clone this repository: ```git clone git@github.com:jvandebon/artisan-artefacts.git```
 
 ![Workflow](https://github.com/jvandebon/artisan-artefacts/blob/master/demo/workflow.png)
 
@@ -18,7 +32,7 @@ This demonstration shows how to automatically optimise a C++ application (AdPred
 3. Run the provided script to automatically execute steps 4-6 (```source demo/demo1.sh```), or continue manually as follows:
 
 4. Move to the adpredictor application directory: ```cd apps/adpredictor```
-5. Optimise the application: ```python3 ../../metaprograms/udt/udt_openmp.py```
+5. Optimise the application: ```python3 ../../metaprograms/udt/udt_openmp.py main.cpp```
 6. Run the optimised code: ```cd openmp_project ; make ; make run```
 
 The UDT metaprogram in step 5 automatically optimises the application as follows:
@@ -46,7 +60,7 @@ This demonstration shows how to automatically optimise a C++ application (AdPred
 3. Run the provided script to automatically execute steps 4 and 5 (```source demo/demo2_a.sh```), or continue manually as follows:
 
 4. Move to the adpredictor application directory: ```cd apps/adpredictor```
-5. Optimise the application: ```python3 ../../metaprograms/udt/udt_swi_unroll.py```
+5. Optimise the application: ```python3 ../../metaprograms/udt/udt_swi_unroll.py main.cpp```
 
 6. Exit from the Docker environment: ```exit```.  The remaining steps should be executed on the host machine. 
 
