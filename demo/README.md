@@ -31,9 +31,12 @@ The UDT metaprogram in step 5 automatically optimises the application as follows
 
 ### Motivation
 
+This demonstration shows how to automatically optimise a C++ application (AdPredictor) for an CPU+FPGA target platform using a single work-item FPGA kernel with unrolled loops to maximise pipeline parallelism without overmapping FPGA resources.
+
 ### Requirements
 - Artisan and Docker 
 - Intel Quartus Prime 19.3+ with support for OpenCL FPGA SDK for and Intel HLS installed on host machine
+- Arria10 GX Development Kit 
 
 ### Steps
 
@@ -45,13 +48,13 @@ The UDT metaprogram in step 5 automatically optimises the application as follows
 4. Move to the adpredictor application directory: ```cd apps/adpredictor```
 5. Optimise the application: ```python3 ../../metaprograms/udt/udt_swi_unroll.py```
 
-6. Exit from the Docker environment: ```exit```
+6. Exit from the Docker environment: ```exit```.  The remaining steps should be executed on the host machine. 
 
 7. Run the provided script, ```source demo/demo2_b.sh``` to automatically execute steps 8-12, or continue manually as follows:
 
 8. Build the HLS kernel: ```cd swi_project/project/device/lib ; make clean ; make```
-9. Synthesize the design (on the host machine): ```cd apps/adpredictor/swi_project/project ; source build_kernel.sh``` (note: may take hours)
-10. Program the FPGA (on the host machine): ```source program_device.sh```
+9. Synthesize the design: ```cd apps/adpredictor/swi_project/project ; source build_kernel.sh``` (note: may take hours)
+10. Program the FPGA: ```source program_device.sh```
 11. Build the host application: ```make```
 12. Run the synthesized hardware: ```./bin/host 8388608 `pwd`/../../../inputs/adpredictor/```
 
