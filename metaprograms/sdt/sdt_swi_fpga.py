@@ -28,6 +28,16 @@ def create_swi_project(ast, template_path, source_path):
     else:
         vars_rw = {}
 
+    header = []
+    header_pragmas = [row for row in project.query("g:Global => p:Pragma") if 'artisan-hls' in row.p.directive() and 'header' in row.p.directive()]
+    for row in header_pragmas:
+        # print(row.p.directive())
+        directive = row.p.directive()
+        header = json.loads(' '.join(directive.split()[directive.split().index('header') + 1:]))
+        # print(' '.join(directive.split()[directive.split().index('header') + 1:]))
+        header = json.loads(' '.join(directive.split()[directive.split().index('header') + 1:]))
+        print(header)
+
     # determine args, types, sizes if static 
     args = []
     for p in params:
@@ -57,15 +67,22 @@ def create_swi_project(ast, template_path, source_path):
             arg['rw'] = 'RW' 
         args.append(arg)
     
-    populate_cpp_kernel(project, 'hotspot', 'swi_project/cpp_kernel.cpp', args)
-    populate_opencl_kernel('swi_project/project/device/kernel.cl', args)
-    populate_opencl_host(ast, source_path, 'swi_project/project/host/src/', args)
+    populate_cpp_kernel(project, 'hotspot', 'swi_project/cpp_kernel.cpp', args, header)
+    populate_opencl_kernel('swi_project/project/device/kernel.cl', args, header)
+    populate_opencl_host(ast, source_path, 'swi_project/project/host/src/', args, header)
+
+    for h in header:
+        subprocess.call(['cp', header[h]+h, 'swi_project/'])
+        subprocess.call(['cp', header[h]+h, 'swi_project/project/device/lib/'])
+        subprocess.call(['cp', header[h]+h, 'swi_project/project/device/'])
+        subprocess.call(['cp', header[h]+h, 'swi_project/project/host/src/'])
+    subprocess.call(['rm', '-rf', 'ws'])
+
     path_to_kernel = os.getcwd() + '/swi_project/cpp_kernel.cpp'
     ast = model(args='"' + path_to_kernel + '"', ws=Workspace('ws'))
-
-    kernel_project = generate_hls_kernel(ast.project, 'swi_project/project/device/lib/library.cpp')
+    kernel_project = generate_hls_kernel(ast.project, 'swi_project/project/device/lib/library.cpp', header)
     
-    subprocess.call(['rm', '-rf', 'ws'])
+
 
 # ast = model(args=cli(), ws=Workspace('temp'))
 # create_swi_project(ast, "/workspace/metaprograms/templates/", "temp/default")

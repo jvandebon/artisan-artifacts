@@ -23,7 +23,7 @@ def determine_args(params):
 
 
 
-def generate_hls_kernel(project, path_to_hls_kernel):
+def generate_hls_kernel(project, path_to_hls_kernel, header):
     
     # find all pragma statements
     pragmas = project.query('g:Global => p:Pragma')
@@ -83,6 +83,8 @@ def generate_hls_kernel(project, path_to_hls_kernel):
     component_func_string = 'extern "C" {\n' + component_func_string + "}\n"
 
     hls_file_str = '#include "HLS/math.h"\n#include <cstdint>\n'
+    for h in header:
+        hls_file_str += "#include \"" + h + "\"\n"
     hls_file_str += '#define OCL_ADDRSP_CONSTANT const __attribute__((address_space(2)))\n'
     hls_file_str += '#define OCL_ADDRSP_GLOBAL __attribute__((address_space(1)))\n'
     hls_file_str += '#define OCL_ADDRSP_PRIVATE __attribute__((address_space(0)))\n'

@@ -32,14 +32,14 @@ def time_function(ast, func_name):
     ast.export_to("time_function")
     wd = os.getcwd()
     os.chdir("./time_function")
+    subprocess.call(["make", "clean"])
     subprocess.call("make")
-    subprocess.call(["make", "run"])
+    subprocess.call(["make", "run"]
     os.chdir(wd)
     with open('./time_function/%s_time.json' % func_name, 'r') as json_file:
         times = json.load(json_file)
 
     return times[func_name]
-
 
 def remove_timer(ast, func_name):
     
@@ -62,6 +62,8 @@ def remove_timer(ast, func_name):
     global_scope[0].g.instrument(pos='replace', code=global_scope[0].g.unparse().replace('#define __ARTISAN__INIT__\n#include <artisan.hpp>', ''))
 
     ast.commit()
-# ast = model(args=cli(), ws=Workspace('temp'))
-# time_function(ast, 'hotspot')
-# subprocess.call(['rm', '-rf', 'temp'])
+
+ast = model(args=cli(), ws=Workspace('temp'))
+time_function(ast, 'run_cpu')
+subprocess.call(['rm', '-rf', 'temp'])
+

@@ -1,3 +1,4 @@
+    #pragma artisan-hls parallel { "is_parallel" : "True" }
 //*********************************************************************//
 // N-Body Simulation
 //
@@ -13,21 +14,24 @@
 #include <math.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include "typedefs.h"
 
-/**
- * 3-D coordinates
- */
-typedef struct {
-    float x;
-    float y;
-    float z;
-} coord3d_t;
 
-/** Descriptor of a particle state */
-typedef struct {
-    coord3d_t p;
-    coord3d_t v;
-} particle_t;
+#pragma artisan-hls header {"typedefs.h":"./"}
+// /**
+//  * 3-D coordinates
+//  */
+// typedef struct {
+//     float x;
+//     float y;
+//     float z;
+// } coord3d_t;
+
+// /** Descriptor of a particle state */
+// typedef struct {
+//     coord3d_t p;
+//     coord3d_t v;
+// } particle_t;
 
 
 /**
@@ -39,7 +43,7 @@ typedef struct {
  * \param [out] out_particles   Final state of the N particles after nt time-steps
  */
 
-#define EPS 100
+// #define EPS 100
 
 void run_cpu(int n, const float *m,
         const particle_t *in_particles, particle_t *out_particles)
@@ -50,8 +54,10 @@ void run_cpu(int n, const float *m,
     coord3d_t *a = (coord3d_t *) malloc(n * sizeof(coord3d_t));
 
     memset(a, 0, n * sizeof(coord3d_t));
+    
 
     for (int q = 0; q < n; q++) {
+        #pragma artisan-hls parallel { "is_parallel" : "True" }
         for (int j = 0; j < n; j++) {
             float rx = rx = p[j].p.x - p[q].p.x;
             float ry = p[j].p.y - p[q].p.y;

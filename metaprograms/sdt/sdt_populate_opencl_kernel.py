@@ -14,7 +14,7 @@ def format_function_args(args):
 # populate kernel.cl file with call to lobrary function / correct args 
 # ********************************************************************************
 # TODO: copy over all struct and constant definitions / create a common header file? 
-def populate_opencl_kernel(path_to_kernel, args):
+def populate_opencl_kernel(path_to_kernel, args, header):
     # function arguments for extern library function declaration
     opencl_func_args = format_function_args(args)
     # kernel argument
@@ -23,13 +23,16 @@ def populate_opencl_kernel(path_to_kernel, args):
     opencl_runtime_args = ' ,'.join([a['name'] for a in args])
     # write to template kernel.cl
     with open(path_to_kernel, 'r') as f:
-        f_contents = f.read()
+        f_contents = f.read()    
     if "*FUNC_ARGS*" in f_contents:
         f_contents = f_contents.replace("*FUNC_ARGS*", opencl_func_args)
     if "*KERNEL_ARGS*" in f_contents:
         f_contents = f_contents.replace("*KERNEL_ARGS*", opencl_kernel_args)
     if "*RUNTIME_ARGS*" in f_contents:
         f_contents = f_contents.replace("*RUNTIME_ARGS*", opencl_runtime_args)
+    for h in header:
+        f_contents = "#include \"" + h + "\"\n" + f_contents
+
     with open(path_to_kernel, 'w') as f:
         f.write(f_contents)
     
