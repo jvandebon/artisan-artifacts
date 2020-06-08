@@ -7,5 +7,14 @@ hls_math_functions = [
     'ceil', 'floor', 'fmod', 'trunc', 'round', 'rint', 'remainder', 
     'remquo', 'copysign', 'nextafter', 'fdim', 'fmin', 'fmax', 
     'fabs', 'fma','fpclassify','isfinite','finite','isinf', 
-    'isnan', 'isnormal','signbit','isunordered'
+    'isnan', 'isnormal','signbit','isunordered',
+    'cosf', 'sinf', 'tanf', 'acosf', 'asinf', 'atanf', 'atan2f', 
+    'coshf', 'sinhf', 'tanhf', 'acoshf', 'asinhf', 'atanhf', 'expf', 
+    'ldexpf', 'logf', 'log10f', 'modff', 'exp2f', 'exp10f', 'expm1f', 
+    'ilogbf', 'log1pf', 'log2f', 'logbf', 'powf', 'sqrtf', 'cbrtf', 
+    'hypotf', 'erff', 'erfcf', 'tgammaf', 'lgammaf', 'lgamma_rf', 
+    'ceilf', 'floorf', 'fmodf', 'truncf', 'roundf', 'rintf', 'remainderf', 
+    'remquof', 'copysignf', 'nextafterf', 'fdimf', 'fminf', 'fmaxf', 
+    'fabsf', 'fmaf','fpclassifyf','isfinitef','finitef','isinff', 
+    'isnanf', 'isnormalf','signbitf','isunorderedf'
 ]

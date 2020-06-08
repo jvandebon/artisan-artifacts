@@ -22,9 +22,15 @@ def extract_hotspot(ast, hotspot_loop_tag, hotspot_loop_func):
     exprs = loop.query("e:Expr")
     other_vars = []
     arguments = []
-    bad_parent_types = ['SgFunctionCallExp', 'SgDotExp']
+    bad_parent_types = ['SgFunctionCallExp'] #, 'SgDotExp']
     for row in exprs:
         if len(row.e.children()) == 0:
+            if row.e.parent().sg_type_real == 'SgDotExp' and row.e.unparse().strip() not in row.e.parent().unparse().strip().split('.')[0]:
+                continue
+                # print(row.e.unparse().strip())
+                # print(row.e.parent().unparse().strip().split('.')[1])
+                # print( row.e.unparse().strip() in row.e.parent().unparse().strip().split('.')[1])
+                # print(bad_parent_types)
             if row.e.unparse().strip() not in local_vars and not row.e.is_val() and not row.e.parent().sg_type_real in bad_parent_types:
                 a = row.e.unparse().strip()
                 # TODO: check for constants in a better way 

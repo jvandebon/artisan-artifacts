@@ -5,13 +5,18 @@ from artisan.rose import *
 def determine_args(params):
     args = []
     for p in params:
+        # print(p.name, p.type().unparse().strip())
         arg = {}
         arg['name'] = p.name
         arg['type'] = p.type().unparse().strip()
         if "[" in arg['type'].split()[-1] and "]" in arg['type'].split()[-1]: 
-            arg['string'] = ' '.join(arg['type'].split()[:-1]) + " *" + arg['name'] #+ arg['type'].split()[-1]
+            if len(arg['type'].split()) == 1:
+                arg['string'] = arg['type'].split('[')[0] + " *" + arg['name']
+            else:
+                arg['string'] = ' '.join(arg['type'].split()[:-1]) + " *" + arg['name'] #+ arg['type'].split()[-1]
         else:
             arg['string'] = arg['type'] + " " + arg['name']
+        
         args.append(arg)
     return args
 
@@ -50,11 +55,11 @@ def func_spec_pragma(func_name, args):
 # **********************************************************************************
 
 # TODO: copy over all struct, type, and global var definiitions 
-def populate_cpp_kernel(project, function, path_to_file, args):
+def populate_cpp_kernel(project, function, path_to_file, args, header):
 
     pragmas = ["#pragma artisan-hls component lib_func\n"]
-    global_vars = [] # TODO
-    structs_and_types = []  # TODO
+    # global_vars = [] # TODO
+    # structs_and_types = []  # TODO
     func_prototypes = []
     functions = []
     
@@ -75,13 +80,17 @@ def populate_cpp_kernel(project, function, path_to_file, args):
         func_prototypes.append(func_decl + ";")
         functions.append(func_decl + "\n" + func.body().unparse())
 
+    
     cpp_file_str = "#include <cmath>\n#include <cstdint>\n"
+    for h in header:
+        cpp_file_str += "#include \"" + h + "\"\n"
+
     for i in pragmas:
         cpp_file_str += i + "\n"
-    for i in global_vars:
-        cpp_file_str += i + "\n"
-    for i in structs_and_types:
-        cpp_file_str += i + "\n"   
+    # for i in global_vars:
+    #     cpp_file_str += i + "\n"
+    # for i in structs_and_types:
+    #     cpp_file_str += i + "\n"   
     for i in func_prototypes:
         cpp_file_str += i + "\n"
     for i in functions:

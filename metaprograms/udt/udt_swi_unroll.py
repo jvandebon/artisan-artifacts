@@ -93,6 +93,7 @@ if not os.path.exists("./swi_project"):
     create_swi_project(ast, "/workspace/metaprograms/templates/", "swi_ws/default")
     subprocess.call(['rm', '-rf', 'swi_ws'])
 
+exit(0)
 if os.path.exists("./swi_project"):
     # new ast for kernel
     path_to_kernel = os.getcwd() + '/swi_project/cpp_kernel.cpp'

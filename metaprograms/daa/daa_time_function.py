@@ -29,8 +29,9 @@ def time_function(ast, func_name):
     ast.export_to("time_function")
     wd = os.getcwd()
     os.chdir("./time_function")
+    subprocess.call(["make", "clean"])
     subprocess.call("make")
-    subprocess.call(["make", "run"])
+    subprocess.call(["make", "run"]
     os.chdir(wd)
     with open('./time_function/%s_time.json' % func_name, 'r') as json_file:
         times = json.load(json_file)
@@ -39,5 +40,5 @@ def time_function(ast, func_name):
     return times[func_name]
 
 ast = model(args=cli(), ws=Workspace('temp'))
-time_function(ast, 'hotspot')
+time_function(ast, 'run_cpu')
 subprocess.call(['rm', '-rf', 'temp'])

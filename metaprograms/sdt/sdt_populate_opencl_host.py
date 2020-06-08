@@ -5,7 +5,7 @@ from artisan.rose import *
 import subprocess, os
 import opencl_host_strings
 
-def populate_opencl_host(ast, path_to_source, path_to_host, kernel_args):
+def populate_opencl_host(ast, path_to_source, path_to_host, kernel_args, header):
 
     project = ast.project
 
@@ -143,6 +143,10 @@ def populate_opencl_host(ast, path_to_source, path_to_host, kernel_args):
     cleanup_function = opencl_host_strings.CLEANUP.replace('*RELEASE_BUFFERS*', release_buffers)
     main_func.instrument(pos='after', code=cleanup_function)
     instrument_block(main_func.body(), "#ifdef  HW\ncleanup();\n#endif", exit=True)
+
+    # gl = project.query("g:Global")
+    # for h in header:
+    #     gl[0].g.instrument(pos='before', code="#include \"" + h + "\"\n")
     
     ast.commit()
     for f in os.listdir(path_to_source):
