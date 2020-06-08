@@ -122,6 +122,8 @@ if os.path.exists("./swi_project"):
             break
         
         percentages = [utilisation[u]['percentage'] for u in utilisation]
+        for u in utilisation:
+            print(u, utilisation[u]['percentage'], '%')
         # if no change, or if any resources are at > 100%, go back to previous unroll factor, finish 
         if max(percentages) > 90 or percentages == prev_percentages:
             rollback(UF, ast)

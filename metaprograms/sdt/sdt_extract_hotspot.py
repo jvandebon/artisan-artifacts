@@ -47,7 +47,7 @@ def extract_hotspot(ast, hotspot_loop_tag, hotspot_loop_func):
     loop.instrument(pos='replace', code="hotspot(" + ', '.join(other_vars)+ ");\n")
 
     ast.commit()
-    # ast.export_to("extracted_hotspot")
+    ast.export_to("extracted-hotspot")
 
 
 # hotspot_loop_tag = 'rendering_sw_for_a' #'SgdLR_sw_for_a' #'main_for_b' 'compute_for_a' 'run_cpu_for_a'
