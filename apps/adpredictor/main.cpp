@@ -5,6 +5,9 @@
 #include <sys/time.h>
 #include <cmath>
 #include <stdint.h>
+#include <fstream>
+
+#pragma artisan-hls types {"uint64_t": "unsigned int"}
 
 #define NUM_FEATURES 12
 #define VOL_INC 50000
@@ -30,6 +33,9 @@
 
 using namespace std;
 
+
+void check_results(float *post_m, float *post_s, int volume);
+
 float PDF(float z) {
    return exp(-z * z / 2) / root2pi;
 }
@@ -38,9 +44,9 @@ float CDF(float z) {
         float expntl = exp(-.5*zabs*zabs);
         float pdf = expntl/root2pi;
 
-        float c1 = z > 37.0;
-        float c2 = z < -37.0;
-        float c3 = zabs < cutoff;
+        int c1 = z > 37.0;
+        int c2 = z < -37.0;
+        int c3 = zabs < cutoff;
         float pA =  expntl*((((((p6*zabs + p5)*zabs + p4)*zabs + p3)*zabs +
           p2)*zabs + p1)*zabs + p0)/(((((((q7*zabs + q6)*zabs +
           q5)*zabs + q4)*zabs + q3)*zabs + q2)*zabs + q1)*zabs +
@@ -50,12 +56,12 @@ float CDF(float z) {
 
    float pX = c3? pA : pB;
    float p = (z < 0.0) ? pX : 1 - pX;
-        return c1? 1.0 : (c2 ? 0.0 : p);
+   return c1? 1.0 : (c2 ? 0.0 : p);
 }
 
 float V (float t) {
    float cdf = CDF(t);
-   float c0 = (cdf == 0.0);
+   int c0 = (cdf == 0.0);
    return c0? 0.0 : (PDF(t) / cdf);
 }
 
@@ -126,15 +132,8 @@ int main(int argc, char *argv[]) {
       post_s[st * NUM_FEATURES + i] = sqrt(fabs(prior_v[st * NUM_FEATURES + i] * (1 - (prior_v[st * NUM_FEATURES + i] / (S * S)) *  W(t))));
     }
   }
-
-  // for (uint st = 0; st < volume; st++) {
-  //   for (int i = 0; i < 12; i++) {
-  //     uint idx = st * 12 + i;
-  //     if (st % (volume / 10) == 0 && i == 0) {
-  //       printf("%d %d - %.4f %.4f\n", st, i, post_m[idx], post_s[idx]);
-  //     }
-  //   }
-  // }
+  printf("Checking results...\n");
+  check_results(post_m, post_s, volume);
 
   delete[] prior_m;
   delete[] prior_v;
@@ -142,4 +141,27 @@ int main(int argc, char *argv[]) {
   delete[] post_s;
 
   return 0;
+}
+
+// check results
+void check_results(float *post_m, float *post_s, int volume)
+{
+  std::ofstream ofile;
+  ofile.open("outputs.txt");
+  if (ofile.is_open())
+  {
+    ofile << "\nst | i | post_m | post_s \n";
+    for (uint st = 0; st < volume; st++) {
+      for (int i = 0; i < 12; i++) {
+        uint idx = st * 12 + i;
+        if (st % (volume / 10) == 0 && i == 0) {
+          ofile << st << " " << i << " " << post_m[idx] << " " << post_s[idx] << std::endl; 
+        }
+      }
+    }
+  }
+  else
+  {
+    std::cout << "Failed to create output file!" << std::endl;
+  }
 }

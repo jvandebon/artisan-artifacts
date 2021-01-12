@@ -11,11 +11,14 @@
 
 // other headers
 #include "typedefs.h"
-#pragma artisan-hls header {"typedefs.h":"./"}
-#pragma artisan-hls header {"haar_dataEWC_with_partitioning.h":"./"}
-#pragma artisan-hls header {"haar_dataRcc_with_partitioning.h":"./"}
+#pragma artisan-hls header {"file": "typedefs.h", "path":"./"}
+#include "haar_dataEWC_with_partitioning.h"
+#include "haar_dataRcc_with_partitioning.h"
+#pragma artisan-hls header {"file": "haar_dataEWC_with_partitioning.h", "path":"./"}
+#pragma artisan-hls header {"file": "haar_dataRcc_with_partitioning.h", "path":"./"}
 // data
 #include "image0_320_240.h"
+#pragma artisan-hls header {"file":"image0_320_240.h", "path":"./", "host_only":"True"}
 
 void print_usage(char* filename);
 void parse_sdsoc_command_line_args(int argc, char** argv, std::string& outFile);
@@ -336,8 +339,8 @@ void face_detect_sw
     MySize winSize = { myRound(winSize0.width*factor), myRound(winSize0.height*factor) };
 
     /* size of the image scaled down */
-    MySize sz = { (IMAGE_WIDTH/factor), (IMAGE_HEIGHT/factor) };
-    
+    MySize sz = { (int)(IMAGE_WIDTH/factor), (int)(IMAGE_HEIGHT/factor) };
+    printf("%f %d %d\n", factor, int((IMAGE_WIDTH/factor)), int((IMAGE_WIDTH/factor)));
     height = sz.height;
     width  = sz.width;
 
@@ -393,6 +396,7 @@ void processImage
 
   Pixely: for( y = 0; y < sum_row - WINDOW_SIZE + 1; y++ ){
     #pragma artisan-hls parallel { "is_parallel" : "True" }
+    #pragma artisan-hls pointers {"AllCandidates_x": "100", "AllCandidates_y": "100", "AllCandidates_w": "100", "AllCandidates_h": "100", "AllCandidates_size": "1"}
 
     Pixelx: for ( x = 0; x < sum_col - WINDOW_SIZE + 1; x++ ){
 
@@ -405,16 +409,21 @@ void processImage
                                  );
 
      if ( result > 0 ) {
-       MyRect r = {myRound(p.x*factor), myRound(p.y*factor), winSize.width, winSize.height};
-       AllCandidates_x[*AllCandidates_size]=r.x;
-       AllCandidates_y[*AllCandidates_size]=r.y;
-       AllCandidates_w[*AllCandidates_size]=r.width;
-       AllCandidates_h[*AllCandidates_size]=r.height;
+       AllCandidates_x[*AllCandidates_size]=myRound(p.x*factor);
+       AllCandidates_y[*AllCandidates_size]=myRound(p.y*factor);
+       AllCandidates_w[*AllCandidates_size]=winSize.width;
+       AllCandidates_h[*AllCandidates_size]=winSize.height; 
       *AllCandidates_size=*AllCandidates_size+1;
      }      
     }   
   } 
 }
+
+      // MyRect r = {myRound(p.x*factor), myRound(p.y*factor), winSize.width, winSize.height};
+      //  AllCandidates_x[*AllCandidates_size]=r.x;
+      //  AllCandidates_y[*AllCandidates_size]=r.y;
+      //  AllCandidates_w[*AllCandidates_size]=r.width;
+      //  AllCandidates_h[*AllCandidates_size]=r.height;
 
 int cascadeClassifier 
 
@@ -434,7 +443,7 @@ int cascadeClassifier
   int r_index = 0;
   int stage_sum=0;
 
-  #include "haar_dataRcc_with_partitioning.h"
+ 
 
   static int coord[12];
 
@@ -444,15 +453,8 @@ int cascadeClassifier
   equRect.width = WINDOW_SIZE;
   equRect.height = WINDOW_SIZE;
 
-  stddev =                    SQSUM1_data[pt.y][pt.x]   
-                           -  SQSUM1_data[pt.y][pt.x+WINDOW_SIZE-1]
-                           -  SQSUM1_data[pt.y+WINDOW_SIZE-1][pt.x] 
-                           +  SQSUM1_data[pt.y+WINDOW_SIZE-1][pt.x+WINDOW_SIZE-1];
-
-  mean =                      SUM1_data[pt.y][pt.x]   
-                           -  SUM1_data[pt.y][pt.x+WINDOW_SIZE-1]
-                           -  SUM1_data[pt.y+WINDOW_SIZE-1][pt.x] 
-                           +  SUM1_data[pt.y+WINDOW_SIZE-1][pt.x+WINDOW_SIZE-1];
+  stddev = SQSUM1_data[pt.y][pt.x] - SQSUM1_data[pt.y][pt.x+WINDOW_SIZE-1] - SQSUM1_data[pt.y+WINDOW_SIZE-1][pt.x] +  SQSUM1_data[pt.y+WINDOW_SIZE-1][pt.x+WINDOW_SIZE-1];
+  mean = SUM1_data[pt.y][pt.x] - SUM1_data[pt.y][pt.x+WINDOW_SIZE-1] - SUM1_data[pt.y+WINDOW_SIZE-1][pt.x] + SUM1_data[pt.y+WINDOW_SIZE-1][pt.x+WINDOW_SIZE-1];
 
   stddev = (stddev*(WINDOW_SIZE-1)*(WINDOW_SIZE-1));
   stddev =  stddev - mean*mean; 
@@ -549,7 +551,6 @@ int weakClassifier
   int w_id 
 )
 {                                                                                             
-  #include "haar_dataEWC_with_partitioning.h"
   int t = tree_thresh_array[haar_counter] * stddev; 
   
   int sum0 =0;

@@ -16,7 +16,7 @@ def check_utilisation(path_to_reports):
     utilisation = {}
     for i in range(len(columns)):
         utilisation[columns[i]] = {'percentage': percentages[i], 'total': totals[i]}
-    print(columns)
+    # print(columns)
     return utilisation
 
 # check_utilisation(os.getcwd() + '/swi_project/project/bin/kernel/reports')

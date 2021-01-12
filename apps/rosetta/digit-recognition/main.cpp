@@ -9,11 +9,13 @@
 #include <fstream>
 // other headers
 #include "typedefs.h"
-#pragma artisan-hls header {"typedefs.h":"./"}
+#pragma artisan-hls header {"file":"typedefs.h", "path":"./"}
 
 // data
 #include "training_data.h"
 #include "testing_data.h"
+#pragma artisan-hls header {"file": "training_data.h", "path": "./", "host_only": "True"}
+#pragma artisan-hls header {"file": "testing_data.h", "path": "./", "host_only": "True"}
 
 void print_usage(char* filename);
 void check_results(LabelType* result, const LabelType* expected, int cnt);
@@ -35,23 +37,23 @@ int main(int argc, char ** argv)
 
     // sw version host code
     // create space for the result
-    LabelType* result = new LabelType[NUM_TEST];
+    LabelType* results = new LabelType[NUM_TEST];
 
     // software version
     gettimeofday(&start, NULL);
-    DigitRec_sw(training_data, testing_data, result);
+    DigitRec_sw(training_data, testing_data, results);
     gettimeofday(&end, NULL);
 
     // check results
     printf("Checking results:\n");
-    check_results( result, expected, NUM_TEST );
+    check_results( results, expected, NUM_TEST );
         
     // print time
     long long elapsed = (end.tv_sec - start.tv_sec) * 1000000LL + end.tv_usec - start.tv_usec;   
     printf("elapsed time: %lld us\n", elapsed);
 
     // cleanup
-    delete []result;
+    delete []results;
     return EXIT_SUCCESS;
 }
 
@@ -77,6 +79,7 @@ void check_results(LabelType* result, const LabelType* expected, int cnt)
       if (result[i] != expected[i]) {
         ofile << "Test " << i << ": expected = " << int(expected[i]) << ", result = " << int(result[i]) << std::endl;
       } else {
+        // ofile << "*CORRECT* Test " << i << ": expected = " << int(expected[i]) << ", result = " << int(result[i]) << std::endl;
         correct_cnt ++;
       }
     }
@@ -92,12 +95,9 @@ void check_results(LabelType* result, const LabelType* expected, int cnt)
 
 /**** DIGITREC_SW.CPP ****/
 
-
-
-
 // popcount function
 // source: wikipedia (https://en.wikipedia.org/wiki/Hamming_weight)
-int popcount(DigitType x)
+int popcount_(DigitType x)
 {
    x -= (x >> 1) & m1;             //put count of each 2 bits into those 2 bits
    x = (x & m2) + ((x >> 2) & m2); //put count of each 4 bits into those 4 bits 
@@ -115,7 +115,7 @@ void update_knn( const DigitType* train_inst, const DigitType* test_inst, int di
   for (int i = 0; i < DIGIT_WIDTH; i ++ )
   {
     DigitType diff = test_inst[i] ^ train_inst[i];
-    dist += popcount(diff);
+    dist += popcount_(diff);
   }
 
   int max_dist = 0;
@@ -179,6 +179,7 @@ void DigitRec_sw(const DigitType training_set[NUM_TRAINING * DIGIT_WIDTH],
   TEST_LOOP: for (int t = 0; t < NUM_TEST; ++t) 
   {
     #pragma artisan-hls parallel { "is_parallel" : "True" }
+    #pragma artisan-hls vars { "training_set": "R", "test_set": "R", "results": "W"}
     // Initialize the neighbor set
     SET_KNN_SET: for ( int i = 0; i < K_CONST; ++i ) 
     {
@@ -188,8 +189,9 @@ void DigitRec_sw(const DigitType training_set[NUM_TRAINING * DIGIT_WIDTH],
     }
 
     // for each training instance, compare it with the test instance, and update the nearest neighbor set
-    TRAINING_LOOP : for ( int i = 0; i < NUM_TRAINING; ++i ) 
+    TRAINING_LOOP : for ( int i = 0; i < NUM_TRAINING; ++i ) {
       update_knn(&training_set[i * DIGIT_WIDTH], &test_set[t * DIGIT_WIDTH], dists, labels, i / CLASS_SIZE);
+    }
       
     // Compute the final output
     LabelType max_vote = knn_vote(labels);

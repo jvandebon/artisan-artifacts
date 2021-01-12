@@ -29,12 +29,12 @@ def hw_synthesizable(ast, func_name):
             called_func = row.c
             if called_func.name() == "":
                 # function pointer, not supported
-                print("Function pointers are not HLS supported.")
+                print("Function pointers are not supported for synthesis.")
                 return False
             # check if defined in source 
             function_table = project.query("f:FnDef{%s}" % called_func.name())
             if not (len(function_table) != 0 and function_table[0].f.in_code()) and called_func.name() not in hls_math_functions:
-                print("%s is not a HLS supported function." % called_func.name())
+                print("%s is not an OpenCL supported function." % called_func.name())
                 return False
         
         # check for function pointers in function parameters and expressions

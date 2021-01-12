@@ -20,8 +20,7 @@
 // other headers
 // #include "utils.h"
 #include "typedefs.h"
-
-#pragma artisan-hls header {"typedefs.h":"./"}
+#pragma artisan-hls header {"file":"typedefs.h", "path":"./"}
 
 void check_results(FeatureType* param_vector, DataType* data_points, LabelType* labels);
 void print_usage(char* filename);
@@ -62,10 +61,21 @@ int main(int argc, char *argv[])
   for (int i = 0; i < DATA_SET_SIZE; i ++ )
   {
     float tmp;
+
     fscanf(data_file, "%f", &tmp);
     data_points[i] = tmp;
   }
   fclose(data_file);
+
+
+  int non_zero = 0;
+  for (int i = 0; i < DATA_SET_SIZE; i ++ )
+  {
+    if (data_points[i] != 0) {
+      non_zero++;
+   }
+  }
+  printf("NON-ZERO: %d/%d\n", non_zero, DATA_SET_SIZE);
 
   label_file = fopen(str_labels_filepath.c_str(), "r");
   if (!label_file)
@@ -75,11 +85,22 @@ int main(int argc, char *argv[])
   }
   for (int i = 0; i < NUM_SAMPLES; i ++ )
   {
+
     int tmp;
     fscanf(label_file, "%d", &tmp);
     labels[i] = tmp;
   }
   fclose(label_file);
+
+  non_zero = 0;
+  for (int i = 0; i < NUM_SAMPLES; i ++ )
+  {
+    if (labels[i] != 0) {
+      non_zero++;
+   }
+  }
+  printf("NON-ZERO: %d/%d\n", non_zero, NUM_SAMPLES);
+
 
   // reset parameter vector
   for (size_t i = 0; i < NUM_FEATURES; i++) {
@@ -128,7 +149,7 @@ typedef struct DataSet_s
 // dot product
 float dotProduct(FeatureType* param_vector, DataType* data_point_i, const size_t num_features)
 {
-  FeatureType result = 0.0f;
+  FeatureType result = 0.0;
 
   for (int i = 0; i < num_features; i ++ ) {
     result += param_vector[i] * data_point_i[i];
@@ -187,7 +208,7 @@ double computeErrorRate(
 void check_results(FeatureType* param_vector, DataType* data_points, LabelType* labels)
 {
   std::ofstream ofile;
-  ofile.open("output.txt");
+  ofile.open("outputs.txt");
   if (ofile.is_open())
   {
     ofile << "\nmain parameter vector: \n";
@@ -318,7 +339,7 @@ FeatureType dotProduct(FeatureType param[NUM_FEATURES],
 
 FeatureType Sigmoid(FeatureType exponent) 
 {
-  return 1.0f / (1.0f + expf(-exponent));
+  return 1.0 / (1.0 + exp(-exponent));
 }
 
 // Compute the gradient of the cost function
@@ -356,7 +377,8 @@ void SgdLR_sw( DataType    data[NUM_FEATURES * NUM_TRAINING],
   EPOCH: for (int epoch = 0; epoch < NUM_EPOCHS; epoch ++) 
   {
     #pragma artisan-hls parallel { "is_parallel" : "True" }
-    // in each epoch, go through each training instance in sequence
+    #pragma artisan-hls vars { "data": "R", "label": "R", "theta": "W"}
+    // in each epoch, go through each trainingf instance in sequence
     TRAINING_INST: for( int training_id = 0; training_id < NUM_TRAINING; training_id ++ )
     { 
       // dot product between parameter vector and data sample 

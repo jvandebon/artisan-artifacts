@@ -9,17 +9,17 @@
 #include <fstream>
 #include <iostream>
 #include "./imageLib/imageLib.h"
-
 // other headers
 #include "typedefs.h"
+#pragma artisan-hls header {"file":"typedefs.h", "path":"./"}
+// #pragma artisan-hls header {"file":"imageLib.cpp", "path":"./", "host_only":"True"}
+// #pragma artisan-hls header {"file":"imageLib.h", "path":"./", "host_only":"True"}
+#pragma artisan-hls header {"file":"imageLib", "path":"./", "host_only":"True", "directory":"True"}
 
 void print_usage(char* filename);
 void parse_sdaccel_command_line_args( int argc, char** argv, std::string& kernelFile, std::string& dataPath, std::string& outFile);
 void parse_sdsoc_command_line_args( int argc, char** argv, std::string& dataPath, std::string& outFile  ); 
 void check_results(velocity_t output[MAX_HEIGHT][MAX_WIDTH], CFloatImage refFlow, std::string outFile);
-const int GRAD_WEIGHTS[] =  {1,-8,0,8,-1};
-const pixel_t GRAD_FILTER[] = {0.0755, 0.133, 0.1869, 0.2903, 0.1869, 0.133, 0.0755};
-const pixel_t TENSOR_FILTER[] = {0.3243, 0.3513, 0.3243};
 void optical_flow_sw(pixel_t frame0[MAX_HEIGHT][MAX_WIDTH], pixel_t frame1[MAX_HEIGHT][MAX_WIDTH], pixel_t frame2[MAX_HEIGHT][MAX_WIDTH], pixel_t frame3[MAX_HEIGHT][MAX_WIDTH], pixel_t frame4[MAX_HEIGHT][MAX_WIDTH], velocity_t outputs[MAX_HEIGHT][MAX_WIDTH]);
 
 int main(int argc, char ** argv) 
@@ -217,7 +217,7 @@ void check_results(velocity_t output[MAX_HEIGHT][MAX_WIDTH], CFloatImage refFlow
 
   double avg_error = accum_error / num_pix;
   std::ofstream ofile;
-  ofile.open("output.txt");
+  ofile.open("outputs.txt");
   if (ofile.is_open())
   {
     ofile << "Average error: " << avg_error << " degrees" << std::endl;
@@ -234,28 +234,22 @@ void check_results(velocity_t output[MAX_HEIGHT][MAX_WIDTH], CFloatImage refFlow
 
 // compute x, y gradient
 void gradient_xy_calc(pixel_t frame[MAX_HEIGHT][MAX_WIDTH],
-    pixel_t gradient_x[MAX_HEIGHT][MAX_WIDTH],
-    pixel_t gradient_y[MAX_HEIGHT][MAX_WIDTH])
-{
+                      pixel_t gradient_x[MAX_HEIGHT][MAX_WIDTH],
+                      pixel_t gradient_y[MAX_HEIGHT][MAX_WIDTH]) {
   pixel_t x_grad, y_grad;
-  for (int r = 0; r < MAX_HEIGHT + 2; r ++ )
-  {
-    for (int c = 0; c < MAX_WIDTH + 2; c ++)
-    {
+  int frame_idx;
+  for (int r = 0; r < MAX_HEIGHT + 2; r ++ ) {
+    for (int c = 0; c < MAX_WIDTH + 2; c ++) {
       x_grad = 0;
       y_grad = 0;
-      if (r >= 4 && r < MAX_HEIGHT && c >= 4 && c < MAX_WIDTH)
-      {
-        for (int i = 0; i < 5; i++)
-        {
+      if (r >= 4 && r < MAX_HEIGHT && c >= 4 && c < MAX_WIDTH) {
+        for (int i = 0; i < 5; i++) {
           x_grad += frame[r-2][c-i] * GRAD_WEIGHTS[4-i];
           y_grad += frame[r-i][c-2] * GRAD_WEIGHTS[4-i];
         }
         gradient_x[r-2][c-2] = x_grad / 12;
         gradient_y[r-2][c-2] = y_grad / 12;
-      }
-      else if (r >= 2 && c >= 2)
-      {
+      } else if (r >= 2 && c >= 2) {
         gradient_x[r-2][c-2] = 0;
         gradient_y[r-2][c-2] = 0;
       }
@@ -269,12 +263,9 @@ void gradient_z_calc(pixel_t frame0[MAX_HEIGHT][MAX_WIDTH],
                      pixel_t frame2[MAX_HEIGHT][MAX_WIDTH],
                      pixel_t frame3[MAX_HEIGHT][MAX_WIDTH],
                      pixel_t frame4[MAX_HEIGHT][MAX_WIDTH],
-                     pixel_t gradient_z[MAX_HEIGHT][MAX_WIDTH])
-{
-  for (int r = 0; r < MAX_HEIGHT; r ++)
-  {
-    for (int c = 0; c < MAX_WIDTH; c ++)
-    {
+                     pixel_t gradient_z[MAX_HEIGHT][MAX_WIDTH]) {
+  for (int r = 0; r < MAX_HEIGHT; r ++) {
+    for (int c = 0; c < MAX_WIDTH; c ++) {
       gradient_z[r][c] = 0.0f;
       gradient_z[r][c] += frame0[r][c] * GRAD_WEIGHTS[0]; 
       gradient_z[r][c] += frame1[r][c] * GRAD_WEIGHTS[1]; 
@@ -290,28 +281,21 @@ void gradient_z_calc(pixel_t frame0[MAX_HEIGHT][MAX_WIDTH],
 void gradient_weight_y(pixel_t gradient_x[MAX_HEIGHT][MAX_WIDTH],
                        pixel_t gradient_y[MAX_HEIGHT][MAX_WIDTH],
                        pixel_t gradient_z[MAX_HEIGHT][MAX_WIDTH],
-                       gradient_t filt_grad[MAX_HEIGHT][MAX_WIDTH])
-{
-  for (int r = 0; r < MAX_HEIGHT + 3; r ++)
-  {
-    for (int c = 0; c < MAX_WIDTH; c ++)
-    {
+                       gradient_t filt_grad[MAX_HEIGHT][MAX_WIDTH]) {
+  for (int r = 0; r < MAX_HEIGHT + 3; r ++) {
+    for (int c = 0; c < MAX_WIDTH; c ++) {
       gradient_t acc;
       acc.x = 0;
       acc.y = 0;
       acc.z = 0;
-      if (r >= 6 && r < MAX_HEIGHT)
-      { 
-        for (int i = 0; i < 7; i ++)
-        {
+      if (r >= 6 && r < MAX_HEIGHT) { 
+        for (int i = 0; i < 7; i ++) {
           acc.x += gradient_x[r-i][c] * GRAD_FILTER[i];
           acc.y += gradient_y[r-i][c] * GRAD_FILTER[i];
           acc.z += gradient_z[r-i][c] * GRAD_FILTER[i];
         }
         filt_grad[r-3][c] = acc;            
-      }
-      else if (r >= 3)
-      {
+      } else if (r >= 3) {
         filt_grad[r-3][c] = acc;
       }
     }
@@ -320,28 +304,21 @@ void gradient_weight_y(pixel_t gradient_x[MAX_HEIGHT][MAX_WIDTH],
 
 // compute x weight
 void gradient_weight_x(gradient_t y_filt[MAX_HEIGHT][MAX_WIDTH],
-                       gradient_t filt_grad[MAX_HEIGHT][MAX_WIDTH])
-{
-  for (int r = 0; r < MAX_HEIGHT; r ++)
-  {
-    for (int c = 0; c < MAX_WIDTH + 3; c ++)
-    {
+                       gradient_t filt_grad[MAX_HEIGHT][MAX_WIDTH]) {
+  for (int r = 0; r < MAX_HEIGHT; r ++) {
+    for (int c = 0; c < MAX_WIDTH + 3; c ++) {
       gradient_t acc;
       acc.x = 0;
       acc.y = 0;
       acc.z = 0;
-      if (c >= 6 && c < MAX_WIDTH)
-      {
-        for (int i = 0; i < 7; i ++)
-        {
+      if (c >= 6 && c < MAX_WIDTH) {
+        for (int i = 0; i < 7; i ++) {
           acc.x += y_filt[r][c-i].x * GRAD_FILTER[i];
           acc.y += y_filt[r][c-i].y * GRAD_FILTER[i];
           acc.z += y_filt[r][c-i].z * GRAD_FILTER[i];
         }
         filt_grad[r][c-3] = acc;
-      }
-      else if (c >= 3)
-      {
+      } else if (c >= 3) {
         filt_grad[r][c-3] = acc;
       }
     }
@@ -350,12 +327,9 @@ void gradient_weight_x(gradient_t y_filt[MAX_HEIGHT][MAX_WIDTH],
  
 // outer product
 void outer_product(gradient_t gradient[MAX_HEIGHT][MAX_WIDTH],
-                   outer_t outer_product[MAX_HEIGHT][MAX_WIDTH])
-{ 
-  for (int r = 0; r < MAX_HEIGHT; r ++)
-  {
-    for (int c = 0; c < MAX_WIDTH; c ++)
-    {
+                   outer_t outer_product[MAX_HEIGHT][MAX_WIDTH]) { 
+  for (int r = 0; r < MAX_HEIGHT; r ++) {
+    for (int c = 0; c < MAX_WIDTH; c ++) {
       gradient_t grad = gradient[r][c];
       outer_t out;
       out.val[0] = grad.x * grad.x;
@@ -371,30 +345,22 @@ void outer_product(gradient_t gradient[MAX_HEIGHT][MAX_WIDTH],
 
 // tensor weight y
 void tensor_weight_y(outer_t outer[MAX_HEIGHT][MAX_WIDTH],
-                     tensor_t tensor_y[MAX_HEIGHT][MAX_WIDTH])
-{
-  for (int r = 0; r < MAX_HEIGHT + 1; r ++)
-  {
-    for(int c = 0; c < MAX_WIDTH; c ++)
-    {
+                     tensor_t tensor_y[MAX_HEIGHT][MAX_WIDTH]) {
+  for (int r = 0; r < MAX_HEIGHT + 1; r ++) {
+    for(int c = 0; c < MAX_WIDTH; c ++) {
       tensor_t acc;
-      for (int k = 0; k < 6; k ++)
-      {
+      for (int k = 0; k < 6; k ++) {
         acc.val[k] = 0;
       }
 
-      if (r >= 2 && r < MAX_HEIGHT) 
-      {
-        for (int i = 0; i < 3; i ++)
-        {
-          for(int component = 0; component < 6; component ++)
-          {
+      if (r >= 2 && r < MAX_HEIGHT) {
+        for (int i = 0; i < 3; i ++) {
+          for(int component = 0; component < 6; component ++) {
             acc.val[component] += outer[r-i][c].val[component] * TENSOR_FILTER[i];
           }
         }
       }
-      if (r >= 1)
-      { 
+      if (r >= 1) { 
         tensor_y[r-1][c] = acc;            
       }
     }
@@ -405,27 +371,20 @@ void tensor_weight_y(outer_t outer[MAX_HEIGHT][MAX_WIDTH],
 void tensor_weight_x(tensor_t tensor_y[MAX_HEIGHT][MAX_WIDTH],
                      tensor_t tensor[MAX_HEIGHT][MAX_WIDTH])
 {
-  for (int r = 0; r < MAX_HEIGHT; r ++)
-  {
-    for (int c = 0; c < MAX_WIDTH + 1; c ++)
-    {
+  for (int r = 0; r < MAX_HEIGHT; r ++) {
+    for (int c = 0; c < MAX_WIDTH + 1; c ++) {
       tensor_t acc;
-      for(int k = 0; k < 6; k++)
-      {
+      for(int k = 0; k < 6; k++) {
         acc.val[k] = 0;
       }
-      if (c >= 2 && c < MAX_WIDTH) 
-      {
-        for (int i = 0; i < 3; i ++)
-        {
-          for (int component = 0; component < 6; component ++)
-          {
+      if (c >= 2 && c < MAX_WIDTH) {
+        for (int i = 0; i < 3; i ++) {
+          for (int component = 0; component < 6; component ++) {
             acc.val[component] += tensor_y[r][c-i].val[component] * TENSOR_FILTER[i];
           }
         }
       }
-      if (c >= 1)
-      {
+      if (c >= 1) {
         tensor[r][c-1] = acc;
       }
     }
@@ -434,23 +393,17 @@ void tensor_weight_x(tensor_t tensor_y[MAX_HEIGHT][MAX_WIDTH],
 
 // compute flow
 void flow_calc(tensor_t tensors[MAX_HEIGHT][MAX_WIDTH],
-               velocity_t output[MAX_HEIGHT][MAX_WIDTH])
-{
-  for(int r = 0; r < MAX_HEIGHT; r ++)
-  {
-    for(int c = 0; c < MAX_WIDTH; c ++)
-    {
-      if (r >= 2 && r < MAX_HEIGHT - 2 && c >= 2 && c < MAX_WIDTH - 2)
-      {
+               velocity_t output[MAX_HEIGHT][MAX_WIDTH]) {
+  for(int r = 0; r < MAX_HEIGHT; r ++) {
+    for(int c = 0; c < MAX_WIDTH; c ++) {
+      if (r >= 2 && r < MAX_HEIGHT - 2 && c >= 2 && c < MAX_WIDTH - 2) {
         pixel_t denom = tensors[r][c].val[0] * tensors[r][c].val[1] -
                         tensors[r][c].val[3] * tensors[r][c].val[3];
         output[r][c].x = (tensors[r][c].val[5] * tensors[r][c].val[3] -
                           tensors[r][c].val[4] * tensors[r][c].val[1]) / denom;
         output[r][c].y = (tensors[r][c].val[4] * tensors[r][c].val[3] -
                           tensors[r][c].val[5] * tensors[r][c].val[0]) / denom;
-      }
-      else
-      {
+      } else {
         output[r][c].x = 0;
         output[r][c].y = 0;
       }

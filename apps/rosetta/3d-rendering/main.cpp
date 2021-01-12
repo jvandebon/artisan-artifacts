@@ -9,10 +9,10 @@
 #include <iostream>
 
 #include "typedefs.h"
-#pragma artisan-hls header {"typedefs.h":"./"}
+#pragma artisan-hls header {"file":"typedefs.h", "path":"./"}
 // data
 #include "input_data.h"
-
+#pragma artisan-hls header {"file":"input_data.h", "path":"./", "host_only":"True"}
 void print_usage(char* filename);
 void check_results(bit8 output[MAX_X][MAX_Y]);
 void rendering_sw(Triangle_3D triangle_3ds[NUM_3D_TRI], bit8 output[MAX_X][MAX_Y]);
@@ -362,6 +362,7 @@ void rendering_sw( Triangle_3D triangle_3ds[NUM_3D_TRI], bit8 output[MAX_X][MAX_
   TRIANGLES: for (int i = 0; i < NUM_3D_TRI; i ++ )
   {
     #pragma artisan-hls parallel { "is_parallel" : "True" }
+    #pragma artisan-hls vars { "triangle_3ds": "R", "output": "W"}
     // five stages for processing each 3D triangle
     projection( triangle_3ds[i], &triangle_2ds, angle );
     bool flag = rasterization1(triangle_2ds, max_min, max_index);

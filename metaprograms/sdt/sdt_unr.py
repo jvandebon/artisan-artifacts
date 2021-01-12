@@ -6,11 +6,10 @@ def unroll_loop(ast, loop_tag, unroll_factor=0):
 
     project = ast.project
     loop = project.query("l:ForLoop{%s}" % loop_tag)[0].l
-
     # check if there is already a pragma unroll associated with this loop
     pragmas = project.query("g:Global => p:Pragma")
     for row in pragmas:
-        if row.p.in_code() and 'unroll' in row.p.directive() and row.p.next().unparse() == loop.unparse():
+        if row.p.in_code() and 'unroll' in row.p.directive() and loop.unparse().strip() in row.p.next().unparse():
             # if yes, modify value
             row.p.instrument(pos='replace', code='#pragma unroll %s' % str(unroll_factor))
             return

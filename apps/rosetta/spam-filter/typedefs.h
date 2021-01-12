@@ -12,13 +12,13 @@
 
 
 // dataset information
-const int NUM_FEATURES  = 1024;
-const int NUM_SAMPLES   = 5000;
-const int NUM_TRAINING  = 4500;
-const int NUM_TESTING   = 500;
-const int STEP_SIZE     = 60000; 
-const int NUM_EPOCHS    = 5;
-const int DATA_SET_SIZE = NUM_FEATURES * NUM_SAMPLES;
+#define NUM_FEATURES   1024
+#define NUM_SAMPLES    5000
+#define NUM_TRAINING   4500
+#define NUM_TESTING    500
+#define STEP_SIZE      60000 
+#define NUM_EPOCHS     5
+#define DATA_SET_SIZE  NUM_FEATURES*NUM_SAMPLES
 
 
 // software version uses C++ built-in datatypes

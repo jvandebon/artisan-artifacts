@@ -1,11 +1,13 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
+#include <fstream>
 
 #define DIM 16 
 #define CLASSES	1024
 
-
+void check_results(int *out, int points);
 void radiusCPU(
 		const float *class_centres,
 		const float *class_radii2,
@@ -53,13 +55,27 @@ int main(int argc, char **argv) {
 		#pragma artisan-hls parallel { "is_parallel" : "True" }
 		radiusCPU(classes, radii2, &data[DIM*i], &out[CLASSES*i]);
 	}
+
+  	printf("Checking results...\n");
+  	check_results(out, points);
+
+	free(classes);
+	free(data);
+	free(radii2);
+	free(out);
+
+	return 0;
+}
+
+void check_results(int *out, int points){
+
 	int total_in_class = 0;
 	int total_in_multiple = 0;
 	for(int i = 0; i < CLASSES*points; i+=CLASSES){
 		int point = i / CLASSES;
 		int *result = &out[i];
-                int in_class = 0;
-                int in_multiple = 0;
+        int in_class = 0;
+        int in_multiple = 0;
 		for(int j =  0; j  < CLASSES;j++){
 		    if(result[j] != -1){
    			 if (in_class == 1) { in_multiple  = 1; }
@@ -69,13 +85,12 @@ int main(int argc, char **argv) {
                 if (in_class) { total_in_class++; }
                 if (in_multiple) { total_in_multiple++; }
 	}
-
-    printf("in class=%d multiple=%d\n", total_in_class, total_in_multiple);
-
-	free(classes);
-	free(data);
-	free(radii2);
-	free(out);
-
-	return 0;
+  std::ofstream ofile;
+  ofile.open("outputs.txt");
+  if (ofile.is_open())
+  {
+    ofile << "points classified = " << total_in_class << ", points in multiple classes = " << total_in_multiple << std::endl;
+  }  else {
+    std::cout << "Failed to create output file!" << std::endl;
+  }
 }
